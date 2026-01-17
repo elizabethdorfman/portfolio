@@ -8,10 +8,10 @@ export default function Home() {
   return (
     <div>
       {/* Hero Section */}
-      <section className="bg-gradient-to-br from-pink-100 via-purple-50 to-pink-50 py-24 md:py-48 min-h-screen flex items-center justify-center">
+      <section className="bg-gradient-to-br from-pink-100 via-purple-50 to-pink-50 pt-8 pb-12 md:pt-12 md:pb-24 min-h-screen flex items-center justify-center">
         <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center animate-fade-in">
-            <div className="mb-8 flex justify-center">
+            <div className="mb-4 flex justify-center">
               <img 
                 src="/IMG_7775.jpeg" 
                 alt="Elizabeth Dorfman"
