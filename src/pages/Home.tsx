@@ -13,7 +13,7 @@ export default function Home() {
           <div className="text-center animate-fade-in">
             <div className="mb-4 flex justify-center">
               <img 
-                src="/IMG_7775.jpeg" 
+                src="/profile-picture.png" 
                 alt="Elizabeth Dorfman"
                 className="w-48 h-48 md:w-64 md:h-64 rounded-full object-cover shadow-xl border-4 border-white/50 animate-fade-in-delay-1"
               />
