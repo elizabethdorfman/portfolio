@@ -170,10 +170,12 @@ export default function CaseStudyDetail() {
       </section>
 
       {/* Learnings */}
-      <section className="mb-12">
-        <h2 className="text-2xl font-semibold text-purple-900 mb-4">Learnings</h2>
-        <p className="text-purple-700 leading-relaxed text-lg whitespace-pre-line">{caseStudy.learnings}</p>
-      </section>
+      {caseStudy.learnings && (
+        <section className="mb-12">
+          <h2 className="text-2xl font-semibold text-purple-900 mb-4">Learnings</h2>
+          <p className="text-purple-700 leading-relaxed text-lg whitespace-pre-line">{caseStudy.learnings}</p>
+        </section>
+      )}
     </div>
   );
 }

@@ -4,6 +4,7 @@ import Home from './pages/Home';
 import About from './pages/About';
 import CaseStudies from './pages/CaseStudies';
 import CaseStudyDetail from './pages/CaseStudyDetail';
+import Resume from './pages/Resume';
 
 function App() {
   return (
@@ -13,6 +14,7 @@ function App() {
         <Route path="/case-studies" element={<CaseStudies />} />
         <Route path="/case-studies/:id" element={<CaseStudyDetail />} />
         <Route path="/about" element={<About />} />
+        <Route path="/resume" element={<Resume />} />
       </Routes>
     </Layout>
   );
