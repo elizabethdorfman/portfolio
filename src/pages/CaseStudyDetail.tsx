@@ -39,8 +39,8 @@ export default function CaseStudyDetail() {
   if (!caseStudy) {
     return (
       <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-16 text-center">
-        <h1 className="text-3xl font-bold text-purple-900 mb-4">Case Study Not Found</h1>
-        <Link to="/case-studies" className="text-purple-600 hover:text-purple-700">
+        <h1 className="text-3xl font-bold text-slate-900 mb-4">Case Study Not Found</h1>
+        <Link to="/case-studies" className="text-indigo-600 hover:text-indigo-700">
           Back to Case Studies
         </Link>
       </div>
@@ -53,7 +53,7 @@ export default function CaseStudyDetail() {
       <div className="mb-12">
         <Link
           to="/case-studies"
-          className="inline-flex items-center text-purple-600 hover:text-purple-700 mb-6 transition-colors"
+          className="inline-flex items-center text-indigo-600 hover:text-indigo-700 mb-6 transition-colors"
         >
           <svg
             className="mr-2 w-5 h-5"
@@ -71,31 +71,31 @@ export default function CaseStudyDetail() {
           Back to Case Studies
         </Link>
         <div className="mb-4">
-          <span className="text-sm font-medium text-purple-600">{caseStudy.company}</span>
+          <span className="text-sm font-medium text-indigo-600">{caseStudy.company}</span>
         </div>
-        <h1 className="text-4xl md:text-5xl font-bold text-purple-900 mb-2">{caseStudy.title}</h1>
+        <h1 className="text-4xl md:text-5xl font-bold text-slate-900 mb-2">{caseStudy.title}</h1>
       </div>
 
       {/* Problem Statement */}
       <section className="mb-12">
-        <h2 className="text-2xl font-semibold text-purple-900 mb-4">Problem Statement</h2>
-        <p className="text-purple-700 leading-relaxed text-lg">{caseStudy.problem}</p>
+        <h2 className="text-2xl font-semibold text-slate-900 mb-4">Problem Statement</h2>
+        <p className="text-slate-700 leading-relaxed text-lg">{caseStudy.problem}</p>
       </section>
 
       {/* Discovery & Research */}
       <section className="mb-12">
-        <h2 className="text-2xl font-semibold text-purple-900 mb-4">Discovery & Research</h2>
-        <p className="text-purple-700 leading-relaxed text-lg whitespace-pre-line">{caseStudy.discovery}</p>
+        <h2 className="text-2xl font-semibold text-slate-900 mb-4">Discovery & Research</h2>
+        <p className="text-slate-700 leading-relaxed text-lg whitespace-pre-line">{caseStudy.discovery}</p>
       </section>
 
       {/* Solution & Engineering Approach */}
       <section className="mb-12">
-        <h2 className="text-2xl font-semibold text-purple-900 mb-4">Solution & Engineering Approach</h2>
-        <p className="text-purple-700 leading-relaxed text-lg whitespace-pre-line mb-6">{caseStudy.solution}</p>
+        <h2 className="text-2xl font-semibold text-slate-900 mb-4">Solution & Engineering Approach</h2>
+        <p className="text-slate-700 leading-relaxed text-lg whitespace-pre-line mb-6">{caseStudy.solution}</p>
         
         {/* Video */}
         {caseStudy.video && (
-          <div className="my-8 rounded-2xl overflow-hidden shadow-xl border border-pink-200">
+          <div className="my-8 rounded-2xl overflow-hidden shadow-xl border border-indigo-200">
             <video 
               src={caseStudy.video}
               controls
@@ -109,7 +109,7 @@ export default function CaseStudyDetail() {
         
         {/* Screenshot */}
         {caseStudy.screenshot && !caseStudy.video && (
-          <div className="my-8 rounded-2xl overflow-hidden shadow-xl border border-pink-200">
+          <div className="my-8 rounded-2xl overflow-hidden shadow-xl border border-indigo-200">
             <img 
               src={caseStudy.screenshot} 
               alt={`${caseStudy.title} screenshot`}
@@ -125,9 +125,9 @@ export default function CaseStudyDetail() {
         {caseStudy.diagrams && caseStudy.diagrams.length > 0 && (
           <div className="space-y-12 my-12">
             {caseStudy.diagrams.map((diagram, index) => (
-              <div key={index} className="bg-gradient-to-br from-pink-50 to-pink-100 rounded-2xl p-6 md:p-8 border border-pink-200/50">
-                <h3 className="text-xl font-semibold text-purple-900 mb-2">{diagram.title}</h3>
-                <p className="text-purple-600 mb-6">{diagram.description}</p>
+              <div key={index} className="bg-gradient-to-br from-indigo-50 to-indigo-100 rounded-2xl p-6 md:p-8 border border-indigo-200/50">
+                <h3 className="text-xl font-semibold text-slate-900 mb-2">{diagram.title}</h3>
+                <p className="text-indigo-700 mb-6">{diagram.description}</p>
                 {diagram.mermaid && (
                   <div 
                     ref={(el) => { mermaidRefs.current[index] = el; }}
@@ -149,12 +149,12 @@ export default function CaseStudyDetail() {
         )}
         
         <div>
-          <h3 className="text-lg font-medium text-purple-900 mb-3">Technologies</h3>
+          <h3 className="text-lg font-medium text-slate-900 mb-3">Technologies</h3>
           <div className="flex flex-wrap gap-2">
             {caseStudy.technologies.map((tech) => (
               <span
                 key={tech}
-                className="px-3 py-1 bg-purple-50 text-purple-700 rounded-full text-sm font-medium"
+                className="px-3 py-1 bg-indigo-50 text-indigo-700 rounded-full text-sm font-medium"
               >
                 {tech}
               </span>
@@ -165,15 +165,15 @@ export default function CaseStudyDetail() {
 
       {/* Impact & Results */}
       <section className="mb-12">
-        <h2 className="text-2xl font-semibold text-purple-900 mb-4">Impact & Results</h2>
-        <p className="text-purple-700 leading-relaxed text-lg whitespace-pre-line">{caseStudy.impact}</p>
+        <h2 className="text-2xl font-semibold text-slate-900 mb-4">Impact & Results</h2>
+        <p className="text-slate-700 leading-relaxed text-lg whitespace-pre-line">{caseStudy.impact}</p>
       </section>
 
       {/* Learnings */}
       {caseStudy.learnings && (
         <section className="mb-12">
-          <h2 className="text-2xl font-semibold text-purple-900 mb-4">Learnings</h2>
-          <p className="text-purple-700 leading-relaxed text-lg whitespace-pre-line">{caseStudy.learnings}</p>
+          <h2 className="text-2xl font-semibold text-slate-900 mb-4">Learnings</h2>
+          <p className="text-slate-700 leading-relaxed text-lg whitespace-pre-line">{caseStudy.learnings}</p>
         </section>
       )}
     </div>
