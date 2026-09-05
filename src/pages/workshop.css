@@ -35,9 +35,9 @@
 .studio-nameplate{display:flex;align-items:center;gap:12px}.studio-portrait{width:48px;height:48px;object-fit:contain;flex:none}@media(max-width:600px){.studio-nameplate{gap:10px}.studio-portrait{width:42px;height:42px}}
 
 .studio-nameplate{pointer-events:auto}
-.studio-portrait-glass{position:relative;display:block;width:48px;height:48px;flex:none;isolation:isolate;border-radius:12px;overflow:hidden;background:radial-gradient(ellipse at 35% 20%,#f3ffef12,transparent 70%);transition:background .4s;}
+.studio-portrait-glass{position:relative;display:block;width:48px;height:48px;flex:none;isolation:isolate;background:transparent;}
 .studio-portrait{opacity:.86;filter:saturate(.7) contrast(.93);mask-image:linear-gradient(to bottom,#000 55%,#000b 80%,transparent 100%);-webkit-mask-image:linear-gradient(to bottom,#000 55%,#000b 80%,transparent 100%);transition:opacity .4s,filter .4s;}
-.studio-portrait-glass::after{content:"";position:absolute;inset:0;pointer-events:none;background:linear-gradient(125deg,#fff7 0%,#fff1 25%,transparent 44%,#e3f9f018 58%,transparent 76%);opacity:.35;mix-blend-mode:screen;transition:opacity .4s;}
+.studio-portrait-glass::after{content:"";position:absolute;inset:0;pointer-events:none;background:linear-gradient(125deg,#fff7 0%,#fff1 25%,transparent 44%,#e3f9f018 58%,transparent 76%);opacity:.35;mix-blend-mode:screen;mask:url("/elizabeth-icon-180.png") center/contain no-repeat;-webkit-mask:url("/elizabeth-icon-180.png") center/contain no-repeat;transition:opacity .4s;}
 .studio-nameplate:hover .studio-portrait-glass::after{opacity:.65}.studio-nameplate:hover .studio-portrait{opacity:.95;filter:saturate(.85) contrast(.96)}
 @media(max-width:600px){.studio-portrait-glass{width:42px;height:42px}}
 @media(prefers-reduced-motion:reduce){.studio-portrait,.studio-portrait-glass,.studio-portrait-glass::after{transition:none}}
