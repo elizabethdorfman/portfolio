@@ -78,3 +78,6 @@
 .studio-intro button,.workshop-status button{background:rgba(255,250,246,.2);color:var(--control-ink);border-color:transparent;}
 .studio-intro button:hover,.workshop-status button:hover{background:rgba(255,250,246,.35);}
 @media(hover:hover) and (pointer:fine){.studio-nameplate:hover,.studio-bottom-links a:hover{box-shadow:5px 12px 28px #203b3228;}}
+.story-caption{position:absolute;z-index:4;top:125px;left:50%;transform:translateX(-50%);font:400 clamp(22px,3vw,36px)/1.2 "Helvetica Neue",sans-serif;letter-spacing:-.035em;color:#563947;text-shadow:0 1px 10px #fff9;white-space:nowrap;pointer-events:none;transition:opacity .35s;}
+.story-caption.is-hidden{opacity:0;}
+@media(max-width:600px){.story-caption{top:115px;font-size:24px;}}
