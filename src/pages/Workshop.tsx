@@ -12,6 +12,7 @@ export default function Workshop() {
   const host = useRef<HTMLDivElement>(null);
   const progress = useRef(0);
   const [finale, setFinale] = useState(false);
+  const [introVisible, setIntroVisible] = useState(true);
   const [writingAmount, setWritingAmount] = useState(0);
   const [status, setStatus] = useState('Preparing the studio…');
   useEffect(() => {
@@ -338,7 +339,7 @@ export default function Workshop() {
     // The final scroll chapter paints the sculpture automatically.
 
     const reducedMotion=window.matchMedia("(prefers-reduced-motion: reduce)").matches;
-    const clock=new T.Clock();let frame=0;let current=0;let finaleVisible=false;let lastWriting=-1;
+    const clock=new T.Clock();let frame=0;let current=0;let finaleVisible=false;let introIsVisible=true;let lastWriting=-1;
     const orbitStart = new T.Vector3();
     const orbitAxis = new T.Vector3(0, 1, 0);
     function animate(){frame=requestAnimationFrame(animate);const time=clock.getElapsedTime();
@@ -411,13 +412,15 @@ export default function Workshop() {
       if (Math.abs(writing-lastWriting) > .002 || (writing === 1 && lastWriting !== 1) || (writing === 0 && lastWriting !== 0)) { lastWriting=writing; setWritingAmount(writing); }
       const showFinale = Boolean(david) && current > 1.27;
       if (showFinale !== finaleVisible) { finaleVisible = showFinale; setFinale(showFinale); }
+      const nextIntroVisible = current < .3;
+      if (nextIntroVisible !== introIsVisible) { introIsVisible = nextIntroVisible; setIntroVisible(nextIntroVisible); }
       breezeTime.value = reducedMotion ? 0 : time;
       flowers.forEach((f,i)=>f.rotation.z=reducedMotion?0:Math.sin(time*.65+i)*.012);
       const pushIn = T.MathUtils.smoothstep(current, .3, .74);
       const orbitProgress = T.MathUtils.smoothstep(current, .74, 1.26);
       const pullBack = T.MathUtils.smoothstep(current, 1.26, 1.6);
       const zoomAmount = reducedMotion ? 0 : pushIn * (1 - pullBack);
-      const radius = T.MathUtils.lerp(cameraRestRadius, Math.min(cameraRestRadius, 6.5), zoomAmount);
+      const radius = T.MathUtils.lerp(cameraRestRadius, Math.min(cameraRestRadius, 7.5), zoomAmount);
       if (current < .74) orbitStart.copy(camera.position).sub(controls.target).normalize();
       cameraOffset.copy(orbitStart).multiplyScalar(radius);
       cameraOffset.applyAxisAngle(orbitAxis, reducedMotion ? 0 : Math.PI * 2 * orbitProgress);
@@ -429,5 +432,5 @@ export default function Workshop() {
     }animate();
     return()=>{disposed=true;cancelAnimationFrame(frame);el.removeEventListener('wheel',wheel);gestureSurface.removeEventListener('pointerdown',pointerDown);gestureSurface.removeEventListener('pointermove',pointerMove);gestureSurface.removeEventListener('pointerup',pointerEnd);gestureSurface.removeEventListener('pointercancel',pointerEnd);gestureSurface.removeEventListener('lostpointercapture',pointerEnd);window.removeEventListener('keydown',keyScroll);window.removeEventListener('resize',resize);controls.dispose();scene.traverse(o=>{if(o instanceof T.Mesh){o.geometry.dispose();const mats=Array.isArray(o.material)?o.material:[o.material];mats.forEach(m=>{for(const key of ['map','normalMap','roughnessMap','bumpMap'] as const){if(key in m)(m as T.MeshStandardMaterial)[key]?.dispose();}m.dispose();});}});arcGeometry.forEach(g=>g.dispose());arcMaterial.dispose();envTarget.dispose();renderer.dispose();renderer.domElement.remove();};
   },[]);
-  return <main className="workshop"><HandwrittenFinale key={String(finale)} active={finale} amount={writingAmount} loading={Boolean(status)} onSkip={() => { progress.current = 1.6; }} /><div ref={host} className="workshop-scene" aria-label="Interactive sculpture garden. Drag to look around; scroll to reveal David."/>{status&&<div className="workshop-status studio-glass" role="status"><span className="studio-loading-mark" aria-hidden="true">✧</span><span>{status}</span>{status.includes("could not") && <button onClick={() => window.location.reload()}>Retry ↗</button>}</div>}</main>;
+  return <main className="workshop"><HandwrittenFinale key={String(finale)} active={finale} amount={writingAmount} loading={Boolean(status)} introVisible={introVisible} onSkip={() => { progress.current = 1.6; }} /><div ref={host} className="workshop-scene" aria-label="Interactive sculpture garden. Drag to look around; scroll to reveal David."/>{status&&<div className="workshop-status studio-glass" role="status"><span className="studio-loading-mark" aria-hidden="true">✧</span><span>{status}</span>{status.includes("could not") && <button onClick={() => window.location.reload()}>Retry ↗</button>}</div>}</main>;
 }
