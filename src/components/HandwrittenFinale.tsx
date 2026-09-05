@@ -80,7 +80,7 @@ export default function HandwrittenFinale({ active, amount, loading, onSkip }: {
   }, [active, amount]);
   // The parent remounts this component when the scroll sequence is replayed.
   return <>
-    <div className="studio-nameplate studio-glass"><div className="studio-identity"><div className="studio-name">Elizabeth Dorfman</div><div className="studio-role"><span aria-hidden="true">›_</span> software engineer<span className="nameplate-cursor" aria-hidden="true" /></div></div></div>
+    <div className="studio-nameplate studio-glass"><span className="studio-portrait-glass"><img className="studio-portrait" src="/elizabeth-icon-180.png" alt="" width="48" height="48" /></span><div className="studio-identity"><div className="studio-name">Elizabeth Dorfman</div><div className="studio-role"><span aria-hidden="true">›_</span> software engineer<span className="nameplate-cursor" aria-hidden="true" /></div></div></div>
 
     <header className={`handwritten-heading ${active ? 'is-writing' : ''}`}>
       <h1 className="sr-only">Transforming powerful technology into beautiful, human-centric experiences.</h1>
@@ -112,8 +112,8 @@ export default function HandwrittenFinale({ active, amount, loading, onSkip }: {
         </g>
       </svg>
     </header>
-    {!active && !loading && <div className="studio-intro studio-glass"><span>Scroll to transform</span><button onClick={onSkip}>Skip intro ↗</button></div>}
-    {active && !finished && <div className="studio-writing-hint studio-glass">Keep scrolling to write <span aria-hidden="true">↓</span></div>}
+    {!active && !loading && <div className="studio-intro studio-glass"><span><span className="desktop-gesture-hint">Scroll to transform</span><span className="mobile-gesture-hint">Swipe up to transform</span></span><button onClick={onSkip}>Skip intro ↗</button></div>}
+    {active && !finished && <div className="studio-writing-hint studio-glass"><span className="desktop-gesture-hint">Keep scrolling to write</span><span className="mobile-gesture-hint">Swipe up to write</span> <span aria-hidden="true">↓</span></div>}
     {finished && <nav className="studio-bottom-links" aria-label="Explore Elizabeth’s portfolio">
       <a className="studio-glass" href="/Elizabeth_Dorfman_Resume_Aug2026.pdf" download="Elizabeth_Dorfman_Resume_Aug2026.pdf">Résumé <span>↗</span></a>
       <a className="studio-glass" href="mailto:elizabethdorfman31@gmail.com">Contact <span>↗</span></a>

@@ -34,7 +34,30 @@ export default function Workshop() {
     controls.enablePan = false; controls.enableZoom = false;
     controls.minAzimuthAngle = -.6; controls.maxAzimuthAngle = .6;
     controls.minPolarAngle = 1.05; controls.maxPolarAngle = 1.6;
-    const resize = () => { const w=el.clientWidth,h=el.clientHeight; renderer.setSize(w,h); camera.aspect=w/h; camera.position.set(.8,4.4,w/h<.8?19:12.8); camera.updateProjectionMatrix(); };
+    const mobileScenery: Array<{object:T.Object3D; x:number; z:number; kind:"server"|"flowers"|"bed"}> = [];
+    const resize = () => {
+      const w=el.clientWidth,h=el.clientHeight;
+      renderer.setSize(w,h);
+      camera.aspect=w/h;
+      // Fit the full garden width on portrait screens, including the front flowers.
+      const portrait = camera.aspect < .8;
+      controls.enabled = !portrait;
+      controls.minAzimuthAngle = portrait ? -.12 : -.6;
+      controls.maxAzimuthAngle = portrait ? .12 : .6;
+      const distance = portrait ? Math.max(28, 33 * .462 / camera.aspect) : 12.8;
+      const fogOffset = Math.max(0, distance - 19);
+      (scene.fog as T.Fog).near = 28 + fogOffset;
+      (scene.fog as T.Fog).far = 65 + fogOffset;
+      camera.far = Math.max(70, distance + 50);
+      camera.position.set(portrait ? 0 : .8,portrait ? 4.8 : 4.4,distance);
+      for (const item of mobileScenery) {
+        item.object.position.x = portrait ? (item.kind === 'server' ? item.x - Math.sign(item.x)*1.8 : item.x*.67) : item.x;
+        item.object.position.z = item.z - (portrait && item.kind !== 'server' ? 2 : 0);
+        item.object.scale.x = portrait && item.kind === 'bed' ? .8 : 1;
+        if (item.kind === 'flowers') item.object.scale.setScalar(portrait ? .85 : 1);
+      }
+      camera.updateProjectionMatrix();
+    };
     resize(); window.addEventListener('resize',resize);
     scene.add(new T.HemisphereLight('#fff5df','#7e8b73',1.05));
     const sun = new T.DirectionalLight('#ffecd0',3.2); sun.position.set(-4,9,6); sun.castShadow=true;
@@ -63,10 +86,10 @@ export default function Workshop() {
       return new T.MeshStandardMaterial({map,normalMap,roughnessMap,normalScale:new T.Vector2(.22,.22),roughness:.6,color:'#eee3d2'});
     };
     const floorMat=loadMaterial('marble',8);floorMat.roughness=.28;floorMat.metalness=.08;
-    box(34,.2,52,floorMat,0,-.15,-10);
+    box(34,.2,120,floorMat,0,-.15,0);
     const plaster=loadMaterial('plaster',4);plaster.side=T.DoubleSide;
-    for(const x of [-9,9])box(.55,14,40,plaster,x,7,-10);
-    const vault=mesh(new T.CylinderGeometry(9,9,40,96,1,true,-Math.PI/2,Math.PI),plaster,0,7,-10);vault.rotation.x=-Math.PI/2;vault.castShadow=false;
+    for(const x of [-9,9])box(.55,14,100,plaster,x,7,20);
+    const vault=mesh(new T.CylinderGeometry(9,9,100,96,1,true,-Math.PI/2,Math.PI),plaster,0,7,20);vault.rotation.x=-Math.PI/2;vault.castShadow=false;
     const wallShape=new T.Shape();wallShape.moveTo(-15,0);wallShape.lineTo(15,0);wallShape.lineTo(15,20);wallShape.lineTo(-15,20);wallShape.closePath();
     const opening=new T.Path();opening.moveTo(-6.5,0);opening.lineTo(-6.5,5.5);opening.absarc(0,5.5,6.5,Math.PI,0,true);opening.lineTo(6.5,0);opening.closePath();wallShape.holes.push(opening);
     mesh(new T.ExtrudeGeometry(wallShape,{depth:.8,bevelEnabled:true,bevelSize:.12,bevelThickness:.12,bevelSegments:3}),plaster,0,0,-16);
@@ -97,6 +120,7 @@ export default function Workshop() {
     for (let i=0;i<backdropUv.count;i++) backdropUv.setY(i,backdropUv.getY(i)*1.6);
     const beach=mesh(backdropGeometry,oceanMaterial,0,8.7,-21);
     beach.castShadow=false;beach.receiveShadow=false;
+    const serverStart = scene.children.length;
     for(const x of [-6,6]) {
       box(2.45,5.1,1.25,plaster,x,2.55,-5.9);
       const niche=mesh(new T.TorusGeometry(1.12,.18,16,48,Math.PI),plaster,x,5.05,-5.2);niche.castShadow=false;
@@ -108,6 +132,7 @@ export default function Workshop() {
       }
       for(const dx of [-.86,.86])box(.035,4.4,.05,brass,x+dx,2.35,-5);
     }
+    for (const object of scene.children.slice(serverStart)) mobileScenery.push({object,x:object.position.x,z:object.position.z,kind:'server'});
     // Minimal white glass work surface; sculpture rests directly on the table.
     const whiteGlass=new T.MeshPhysicalMaterial({color:'#f7faf9',roughness:.12,metalness:0,transmission:.28,thickness:.12,ior:1.48});
     box(6.6,.13,2.65,whiteGlass,0,1.55,.1);
@@ -154,7 +179,8 @@ export default function Workshop() {
     const flowers:T.Group[]=[];
     let seed=23;const rand=()=>{seed=(seed*16807)%2147483647;return(seed-1)/2147483646;};
     for(const side of [-1,1]) {
-      box(3,.4,8,stone,side*5,.16,-1.6);
+      const bed=box(3,.4,8,stone,side*5,.16,-1.6);
+      mobileScenery.push({object:bed,x:bed.position.x,z:bed.position.z,kind:'bed'});
       const foliage = new T.TextureLoader().load('/garden-flowers.png');
       foliage.colorSpace=T.SRGBColorSpace;
       const flowerMaterial=new T.MeshStandardMaterial({map:foliage,transparent:true,alphaTest:.15,side:T.DoubleSide,roughness:1,depthWrite:true});
@@ -172,13 +198,14 @@ export default function Workshop() {
         `);
       };
       for(let i=0;i<16;i++) {
-        const f=new T.Group();f.position.set(side*(3.9+rand()*2),.43,-5+rand()*8);scene.add(f);flowers.push(f);
+        const f=new T.Group();f.position.set(side*(3.9+rand()*2),.43,-5+rand()*8);scene.add(f);flowers.push(f);mobileScenery.push({object:f,x:f.position.x,z:f.position.z,kind:'flowers'});
         const size=1.05+rand()*.65;
         const plant=mesh(new T.PlaneGeometry(size*1.45,size,8,8),flowerMaterial,0,size/2,0,f);
         plant.rotation.y=(rand()-.5)*.6;plant.castShadow=false;
       }
 
     }
+    resize();
     let disposed=false;let david:T.Mesh|undefined;
     const assembly={value:0};
 
@@ -262,10 +289,43 @@ export default function Workshop() {
     },undefined,()=>setStatus('Sculpture could not load. Reload to retry.'));
     const wheel=(e:WheelEvent)=>{e.preventDefault();progress.current=T.MathUtils.clamp(progress.current+e.deltaY*.0008,0,1.6);};
     el.addEventListener('wheel',wheel,{passive:false});
-    let touchY=0;
-    const touchStart=(e:TouchEvent)=>{touchY=e.touches[0].clientY;};
-    const touchMove=(e:TouchEvent)=>{if(e.touches.length!==1)return;e.preventDefault();const y=e.touches[0].clientY;progress.current=T.MathUtils.clamp(progress.current+(touchY-y)*.002,0,1.6);touchY=y;};
-    el.addEventListener('touchstart',touchStart,{passive:true});el.addEventListener('touchmove',touchMove,{passive:false});
+    // Pointer events cover both real touch and mouse drags in a phone preview.
+    // Lock each portrait gesture to one action so orbit and timeline never compete.
+    let gesture: {id:number; x:number; y:number; lastX:number; lastY:number; axis:'horizontal'|'vertical'|null} | null = null;
+    const gestureSurface = renderer.domElement;
+    const pointerDown = (e:PointerEvent) => {
+      if(camera.aspect >= .8 || !e.isPrimary || e.button !== 0) return;
+      gesture={id:e.pointerId,x:e.clientX,y:e.clientY,lastX:e.clientX,lastY:e.clientY,axis:null};
+      gestureSurface.setPointerCapture(e.pointerId);
+    };
+    const pointerMove = (e:PointerEvent) => {
+      if(!gesture || gesture.id!==e.pointerId) return;
+      const totalX=e.clientX-gesture.x,totalY=e.clientY-gesture.y;
+      if(!gesture.axis){
+        if(Math.hypot(totalX,totalY)<6) return;
+        gesture.axis=Math.abs(totalY)>=Math.abs(totalX)?'vertical':'horizontal';
+      }
+      if(gesture.axis==='vertical'){
+        progress.current=T.MathUtils.clamp(progress.current+(gesture.lastY-e.clientY)*.002,0,1.6);
+      }else{
+        const offset=camera.position.clone().sub(controls.target);
+        const orbit=new T.Spherical().setFromVector3(offset);
+        orbit.theta=T.MathUtils.clamp(orbit.theta-(e.clientX-gesture.lastX)/el.clientWidth*1.2,controls.minAzimuthAngle,controls.maxAzimuthAngle);
+        camera.position.copy(controls.target).add(offset.setFromSpherical(orbit));
+        camera.lookAt(controls.target);
+      }
+      gesture.lastX=e.clientX;gesture.lastY=e.clientY;
+    };
+    const pointerEnd = (e:PointerEvent) => {
+      if(gesture?.id!==e.pointerId) return;
+      gesture=null;
+      if(gestureSurface.hasPointerCapture(e.pointerId)) gestureSurface.releasePointerCapture(e.pointerId);
+    };
+    gestureSurface.addEventListener('pointerdown',pointerDown);
+    gestureSurface.addEventListener('pointermove',pointerMove);
+    gestureSurface.addEventListener('pointerup',pointerEnd);
+    gestureSurface.addEventListener('pointercancel',pointerEnd);
+    gestureSurface.addEventListener('lostpointercapture',pointerEnd);
     const keyScroll=(e:KeyboardEvent)=>{if(e.target instanceof HTMLInputElement||e.target instanceof HTMLTextAreaElement)return;const step=['ArrowDown','PageDown',' '].includes(e.key)?.08:['ArrowUp','PageUp'].includes(e.key)?-.08:0;if(step){e.preventDefault();progress.current=T.MathUtils.clamp(progress.current+step,0,1.6);}};
     window.addEventListener('keydown',keyScroll);
     // The final scroll chapter paints the sculpture automatically.
@@ -285,7 +345,7 @@ export default function Workshop() {
       arcGeometry.forEach((g,i)=>{
         const arr=g.attributes.position as T.BufferAttribute;
         const angle=i/12*Math.PI*2;
-        const start=i<8?new T.Vector3(i%2?-5.4:5.4,.8+(i%4)*.85,-4.8):new T.Vector3(Math.cos(angle)*.95,1.8+(i%3)*.6,.5);
+        const start=i<8?new T.Vector3((i%2?-1:1)*(camera.aspect<.8?3.6:5.4),.8+(i%4)*.85,-4.8):new T.Vector3(Math.cos(angle)*.95,1.8+(i%3)*.6,.5);
         const end=new T.Vector3(Math.cos(angle+.5)*.42,2.03+stage*2.45,Math.sin(angle+.5)*.42);
         for(let k=0;k<15;k++){
           const t=k/14,envelope=Math.sin(t*Math.PI),jitter=reducedMotion?0:Math.sin(k*13+i*8+Math.floor(time*14));
@@ -345,7 +405,7 @@ export default function Workshop() {
       flowers.forEach((f,i)=>f.rotation.z=reducedMotion?0:Math.sin(time*.65+i)*.012);
       controls.update();renderer.render(scene,camera);
     }animate();
-    return()=>{disposed=true;cancelAnimationFrame(frame);el.removeEventListener('wheel',wheel);el.removeEventListener('touchstart',touchStart);el.removeEventListener('touchmove',touchMove);window.removeEventListener('keydown',keyScroll);window.removeEventListener('resize',resize);controls.dispose();scene.traverse(o=>{if(o instanceof T.Mesh){o.geometry.dispose();const mats=Array.isArray(o.material)?o.material:[o.material];mats.forEach(m=>{for(const key of ['map','normalMap','roughnessMap','bumpMap'] as const){if(key in m)(m as T.MeshStandardMaterial)[key]?.dispose();}m.dispose();});}});arcGeometry.forEach(g=>g.dispose());arcMaterial.dispose();envTarget.dispose();renderer.dispose();renderer.domElement.remove();};
+    return()=>{disposed=true;cancelAnimationFrame(frame);el.removeEventListener('wheel',wheel);gestureSurface.removeEventListener('pointerdown',pointerDown);gestureSurface.removeEventListener('pointermove',pointerMove);gestureSurface.removeEventListener('pointerup',pointerEnd);gestureSurface.removeEventListener('pointercancel',pointerEnd);gestureSurface.removeEventListener('lostpointercapture',pointerEnd);window.removeEventListener('keydown',keyScroll);window.removeEventListener('resize',resize);controls.dispose();scene.traverse(o=>{if(o instanceof T.Mesh){o.geometry.dispose();const mats=Array.isArray(o.material)?o.material:[o.material];mats.forEach(m=>{for(const key of ['map','normalMap','roughnessMap','bumpMap'] as const){if(key in m)(m as T.MeshStandardMaterial)[key]?.dispose();}m.dispose();});}});arcGeometry.forEach(g=>g.dispose());arcMaterial.dispose();envTarget.dispose();renderer.dispose();renderer.domElement.remove();};
   },[]);
   return <main className="workshop"><HandwrittenFinale key={String(finale)} active={finale} amount={writingAmount} loading={Boolean(status)} onSkip={() => { progress.current = 1.6; }} /><div ref={host} className="workshop-scene" aria-label="Interactive sculpture garden. Drag to look around; scroll to reveal David."/>{status&&<div className="workshop-status studio-glass" role="status"><span className="studio-loading-mark" aria-hidden="true">✧</span><span>{status}</span>{status.includes("could not") && <button onClick={() => window.location.reload()}>Retry ↗</button>}</div>}</main>;
 }

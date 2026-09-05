@@ -29,3 +29,15 @@
 @media(max-height:600px) and (min-width:601px){.studio-nameplate{top:14px;left:18px;padding:8px 14px}.studio-name{font-size:17px}.handwritten-heading{top:85px;width:470px}.studio-bottom-links,.studio-intro,.studio-writing-hint,.workshop-status{bottom:16px}}
 @media(prefers-color-scheme:dark){.workshop{--glass-bg:linear-gradient(130deg,#203e35b3,#27473b80);--glass-border:#d9ebd680;--glass-ink:#f5efdf;--glass-shadow:inset 0 1px 0 #ffffff33,0 5px 20px #203b3214;}.studio-bottom-links a:hover{background:#284e40d9}.studio-intro button:hover,.workshop-status button:hover{background:#ffffff30}.studio-intro button,.workshop-status button{background:#ffffff12}.studio-name{text-shadow:none}}
 @media(prefers-reduced-motion:reduce){.handwritten-heading,.writing-pencil{transition:none}.studio-bottom-links a,.studio-loading-mark{animation:none}.writing-pencil{display:none}}
+
+.mobile-gesture-hint{display:none}@media(max-aspect-ratio:4/5){.desktop-gesture-hint{display:none}.mobile-gesture-hint{display:inline}}
+
+.studio-nameplate{display:flex;align-items:center;gap:12px}.studio-portrait{width:48px;height:48px;object-fit:contain;flex:none}@media(max-width:600px){.studio-nameplate{gap:10px}.studio-portrait{width:42px;height:42px}}
+
+.studio-nameplate{pointer-events:auto}
+.studio-portrait-glass{position:relative;display:block;width:48px;height:48px;flex:none;isolation:isolate;border-radius:12px;overflow:hidden;background:radial-gradient(ellipse at 35% 20%,#f3ffef12,transparent 70%);transition:background .4s;}
+.studio-portrait{opacity:.86;filter:saturate(.7) contrast(.93);mask-image:linear-gradient(to bottom,#000 55%,#000b 80%,transparent 100%);-webkit-mask-image:linear-gradient(to bottom,#000 55%,#000b 80%,transparent 100%);transition:opacity .4s,filter .4s;}
+.studio-portrait-glass::after{content:"";position:absolute;inset:0;pointer-events:none;background:linear-gradient(125deg,#fff7 0%,#fff1 25%,transparent 44%,#e3f9f018 58%,transparent 76%);opacity:.35;mix-blend-mode:screen;transition:opacity .4s;}
+.studio-nameplate:hover .studio-portrait-glass::after{opacity:.65}.studio-nameplate:hover .studio-portrait{opacity:.95;filter:saturate(.85) contrast(.96)}
+@media(max-width:600px){.studio-portrait-glass{width:42px;height:42px}}
+@media(prefers-reduced-motion:reduce){.studio-portrait,.studio-portrait-glass,.studio-portrait-glass::after{transition:none}}
