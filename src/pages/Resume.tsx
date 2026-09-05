@@ -9,7 +9,7 @@ export default function Resume() {
         
         <div className="bg-slate-50 rounded-xl border border-slate-200 overflow-hidden shadow-lg">
           <iframe
-            src="/jan-25-resume-elizabeth.pdf"
+            src="/Elizabeth_Dorfman_Resume_Aug2026.pdf"
             className="w-full h-[calc(100vh-200px)] min-h-[800px]"
             title="Elizabeth Dorfman Resume"
           />
