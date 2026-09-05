@@ -1,6 +1,6 @@
 import { useEffect, useRef } from 'react';
 
-const lines = ['Transforming powerful technology', 'into beautiful, human-centric', 'experiences.'];
+const lines = ["I’m Elizabeth.", 'I make powerful technology', 'feel simple.'];
 
 export default function HandwrittenFinale({ active, amount, loading, introVisible, onSkip }: { active: boolean; amount: number; loading: boolean; introVisible: boolean; onSkip: () => void }) {
   const brush = useRef<SVGGElement>(null);
@@ -10,7 +10,7 @@ export default function HandwrittenFinale({ active, amount, loading, introVisibl
     const fraction = Math.max(0, Math.min(amount, 1));
     const row = Math.min(2, Math.floor(fraction * 3));
     const progress = Math.min(1, fraction * 3 - row);
-    const width = row === 2 ? 260 : 620;
+    const width = row === 1 ? 620 : 300;
     const x = (640 - width) / 2 + width * progress;
     brush.current.setAttribute('transform', `translate(${x} ${row * 70 + 49}) rotate(24)`);
     brush.current.style.opacity = !active || fraction <= 0 || fraction >= 1 || window.matchMedia('(prefers-reduced-motion: reduce)').matches ? '0' : '1';
@@ -20,7 +20,7 @@ export default function HandwrittenFinale({ active, amount, loading, introVisibl
     <div className="studio-nameplate studio-glass"><span className="studio-portrait-glass"><img className="studio-portrait" src="/elizabeth-icon-180.png" alt="" width="48" height="48" /><span className="portrait-sparkles" aria-hidden="true"><i/><i/><i/></span></span><div className="studio-identity"><div className="studio-name">Elizabeth Dorfman</div><div className="studio-role"><span aria-hidden="true">›_</span> software engineer<span className="nameplate-cursor" aria-hidden="true" /></div></div></div>
 
     <header className={`handwritten-heading ${active ? 'is-writing' : ''}`}>
-      <h1 className="sr-only">Transforming powerful technology into beautiful, human-centric experiences.</h1>
+      <h1 className="sr-only">I’m Elizabeth. I make powerful technology feel simple.</h1>
       <svg viewBox="0 0 640 240" aria-hidden="true" className="handwritten-ink">
         <defs>
           <linearGradient id="glass-pink" x1="0%" y1="0%" x2="0%" y2="100%">
@@ -34,7 +34,7 @@ export default function HandwrittenFinale({ active, amount, loading, introVisibl
           </filter>
         </defs>
         {lines.map((line, row) => {
-          const width = row === 2 ? 260 : 620;
+          const width = row === 1 ? 620 : 300;
           const progress = Math.max(0, Math.min(1, amount * 3 - row));
           return <g key={line}>
             <defs><clipPath id={`paint-reveal-${row}`}><rect x={(640 - width) / 2 - 5} y={row * 70} width={(width + 10) * progress} height="80"/></clipPath></defs>
