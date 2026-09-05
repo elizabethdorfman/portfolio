@@ -35,6 +35,8 @@ export default function Workshop() {
     controls.minAzimuthAngle = -.6; controls.maxAzimuthAngle = .6;
     controls.minPolarAngle = 1.05; controls.maxPolarAngle = 1.6;
     const mobileScenery: Array<{object:T.Object3D; x:number; z:number; kind:"server"|"flowers"|"bed"}> = [];
+    let cameraRestRadius = 1;
+    const cameraOffset = new T.Vector3();
     const resize = () => {
       const w=el.clientWidth,h=el.clientHeight;
       renderer.setSize(w,h);
@@ -50,6 +52,7 @@ export default function Workshop() {
       (scene.fog as T.Fog).far = 65 + fogOffset;
       camera.far = Math.max(70, distance + 50);
       camera.position.set(portrait ? 0 : .8,portrait ? 4.8 : 4.4,distance);
+      cameraRestRadius = camera.position.distanceTo(controls.target);
       for (const item of mobileScenery) {
         item.object.position.x = portrait ? (item.kind === 'server' ? item.x - Math.sign(item.x)*1.8 : item.x*.67) : item.x;
         item.object.position.z = item.z - (portrait && item.kind !== 'server' ? 2 : 0);
@@ -247,7 +250,11 @@ export default function Workshop() {
     },undefined,()=>setStatus('Computer detail could not load. Reload to retry.'));
     const paintCoverage={value:0};
     const loader=new STLLoader();
-    loader.load('/models/david.stl',geometry=>{
+    // Phones use a 12k-triangle version so the first visit stays usable on slow connections.
+    const sculptureAsset = window.matchMedia('(max-width: 600px)').matches
+      ? '/models/david-mobile.stl'
+      : '/models/david-optimized.stl';
+    loader.load(sculptureAsset,geometry=>{
       if(disposed){geometry.dispose();return;}
       geometry.rotateX(-Math.PI/2);geometry.computeBoundingBox();
       const bounds=geometry.boundingBox!;const center=bounds.getCenter(new T.Vector3());
@@ -332,7 +339,23 @@ export default function Workshop() {
 
     const reducedMotion=window.matchMedia("(prefers-reduced-motion: reduce)").matches;
     const clock=new T.Clock();let frame=0;let current=0;let finaleVisible=false;let lastWriting=-1;
-    function animate(){frame=requestAnimationFrame(animate);const time=clock.getElapsedTime();current=T.MathUtils.lerp(current,progress.current,.065);
+    let motionStarted: number | null = null;
+    const orbitStart = new T.Vector3();
+    const orbitAxis = new T.Vector3(0, 1, 0);
+    function animate(){frame=requestAnimationFrame(animate);const time=clock.getElapsedTime();
+      current=T.MathUtils.lerp(current,progress.current,.065);
+      if (progress.current < .3) motionStarted = null;
+      if (!reducedMotion && david && current >= .65 && motionStarted === null) {
+        motionStarted = time;
+        orbitStart.copy(camera.position).sub(controls.target).normalize();
+      }
+      const shotTime = motionStarted === null ? -1 : time - motionStarted;
+      const shotActive = shotTime >= 0 && shotTime < 20;
+      if (shotActive) {
+        current = shotTime < 3 ? T.MathUtils.lerp(.65, 1, T.MathUtils.smoothstep(shotTime, 0, 3))
+          : shotTime < 14 ? 1 : T.MathUtils.lerp(1, 1.6, T.MathUtils.smoothstep(shotTime, 14, 20));
+        progress.current = current;
+      } else if (shotTime >= 20 && progress.current >= 1.59) { current = 1.6; progress.current = 1.6; }
       const stage=T.MathUtils.smoothstep(current,.1,.7);assembly.value=stage;
       const charge=T.MathUtils.smoothstep(current,.015,.16);
       const energy=charge*(1-T.MathUtils.smoothstep(current,.57,.73));
@@ -399,11 +422,23 @@ export default function Workshop() {
       }
       const writing = current > 1.595 ? 1 : Math.max(0, (current - 1) / .6);
       if (Math.abs(writing-lastWriting) > .002 || (writing === 1 && lastWriting !== 1) || (writing === 0 && lastWriting !== 0)) { lastWriting=writing; setWritingAmount(writing); }
-      const showFinale = Boolean(david) && current > .985;
+      const showFinale = Boolean(david) && current > .985 && (!shotActive || shotTime >= 14);
       if (showFinale !== finaleVisible) { finaleVisible = showFinale; setFinale(showFinale); }
       breezeTime.value = reducedMotion ? 0 : time;
       flowers.forEach((f,i)=>f.rotation.z=reducedMotion?0:Math.sin(time*.65+i)*.012);
-      controls.update();renderer.render(scene,camera);
+      const pushIn = T.MathUtils.smoothstep(current, .3, 1);
+      // Complete the close orbit before starting the pullback.
+      const orbitComplete = shotTime >= 11;
+      const pullBack = shotActive ? (orbitComplete ? T.MathUtils.smoothstep(shotTime, 11, 14) : 0) : T.MathUtils.smoothstep(current, 1, 1.48);
+      const zoomAmount = reducedMotion ? 0 : pushIn * (1 - pullBack);
+      const radius = T.MathUtils.lerp(cameraRestRadius, Math.min(cameraRestRadius, 6.5), zoomAmount);
+      cameraOffset.copy(shotActive ? orbitStart : camera.position.clone().sub(controls.target).normalize()).multiplyScalar(radius);
+      if (shotActive) cameraOffset.applyAxisAngle(orbitAxis, Math.PI * 2 * T.MathUtils.smoothstep(shotTime, 3, 11));
+      controls.target.y = T.MathUtils.lerp(2.8, 3.3, zoomAmount);
+      camera.position.copy(controls.target).add(cameraOffset);
+      controls.enabled = !shotActive && camera.aspect >= .8;
+      if (shotActive) camera.lookAt(controls.target); else controls.update();
+      renderer.render(scene,camera);
     }animate();
     return()=>{disposed=true;cancelAnimationFrame(frame);el.removeEventListener('wheel',wheel);gestureSurface.removeEventListener('pointerdown',pointerDown);gestureSurface.removeEventListener('pointermove',pointerMove);gestureSurface.removeEventListener('pointerup',pointerEnd);gestureSurface.removeEventListener('pointercancel',pointerEnd);gestureSurface.removeEventListener('lostpointercapture',pointerEnd);window.removeEventListener('keydown',keyScroll);window.removeEventListener('resize',resize);controls.dispose();scene.traverse(o=>{if(o instanceof T.Mesh){o.geometry.dispose();const mats=Array.isArray(o.material)?o.material:[o.material];mats.forEach(m=>{for(const key of ['map','normalMap','roughnessMap','bumpMap'] as const){if(key in m)(m as T.MeshStandardMaterial)[key]?.dispose();}m.dispose();});}});arcGeometry.forEach(g=>g.dispose());arcMaterial.dispose();envTarget.dispose();renderer.dispose();renderer.domElement.remove();};
   },[]);

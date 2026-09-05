@@ -7,10 +7,10 @@
 .studio-role{display:flex;align-items:center;gap:7px;margin-top:4px;font:12px/1.4 var(--mono);letter-spacing:.025em;}
 .studio-role>span:first-child{opacity:.65;}
 .nameplate-cursor{width:5px;height:10px;background:currentColor;opacity:.45;}
-.handwritten-heading{position:absolute;z-index:2;top:112px;left:50%;width:min(740px,90vw);transform:translateX(-50%);pointer-events:none;color:#293d38;opacity:0;transition:opacity .35s;filter:drop-shadow(0 1px 1px #fff8eccc);}
+.handwritten-heading{position:absolute;z-index:2;top:112px;left:50%;width:min(740px,90vw);transform:translateX(-50%);pointer-events:none;color:#293d38;opacity:0;transition:opacity .35s;filter:none;}
 .handwritten-heading.is-writing{opacity:1;}
 .handwritten-ink{display:block;width:100%;height:auto;overflow:visible;}
-.writing-pencil{filter:drop-shadow(2px 3px 2px #172e2933);transition:opacity .3s;}
+.writing-brush{filter:drop-shadow(2px 3px 2px #172e2933);transition:opacity .3s;}
 .studio-intro,.studio-writing-hint,.workshop-status{position:absolute;z-index:3;bottom:max(28px,env(safe-area-inset-bottom));left:50%;transform:translateX(-50%);display:flex;gap:18px;align-items:center;max-width:calc(100% - 32px);padding:10px 12px 10px 20px;font:13px/1.5 var(--mono);}
 .studio-intro{white-space:nowrap;}
 .studio-intro button,.workshop-status button{border:1px solid #ffffff80;background:#fff9e64d;color:inherit;border-radius:10px;padding:11px 14px;font:inherit;cursor:pointer;min-height:44px;transition:background .2s;}
@@ -19,16 +19,16 @@
 .studio-loading-mark{font:26px/1 Georgia,serif;animation:studio-breathe 2s ease-in-out infinite;}
 @keyframes studio-breathe{50%{opacity:.4;transform:rotate(45deg)}}
 .studio-bottom-links{position:absolute;z-index:3;bottom:max(28px,env(safe-area-inset-bottom));left:50%;transform:translateX(-50%);display:flex;gap:12px;}
-.studio-bottom-links a{display:flex;align-items:center;gap:28px;padding:15px 24px;text-decoration:none;font:15px/1.5 var(--mono);animation:links-rise .8s cubic-bezier(.2,.8,.2,1) both;transition:background .2s,box-shadow .2s;}
+.studio-bottom-links a{display:flex;align-items:center;gap:28px;padding:15px 24px;text-decoration:none;font:15px/1.5 var(--mono);animation:links-rise .8s cubic-bezier(.2,.8,.2,1) backwards;transition:transform .4s cubic-bezier(.2,.8,.2,1),background .3s,box-shadow .3s,border-color .3s;position:relative;overflow:hidden;isolation:isolate;}
 .studio-bottom-links a:nth-child(2){animation-delay:.13s}.studio-bottom-links a:nth-child(3){animation-delay:.26s}
-.studio-bottom-links a:hover{background:#faffeca6;box-shadow:0 7px 24px #263a3230;}
+
 .studio-bottom-links a span{opacity:.65;}
 .studio-bottom-links a:focus-visible,.studio-intro button:focus-visible,.workshop-status button:focus-visible{outline:2px solid #2f6754;outline-offset:4px;}
 @keyframes links-rise{from{opacity:0;transform:translateY(40px)}to{opacity:1;transform:translateY(0)}}
 @media(max-width:600px){.studio-nameplate{top:16px;left:18px;padding:9px 15px 10px;}.studio-name{font-size:17px;}.handwritten-heading{top:115px;width:96vw}.studio-bottom-links{gap:8px;bottom:max(24px,env(safe-area-inset-bottom));width:calc(100% - 32px);justify-content:center}.studio-bottom-links a{justify-content:center;gap:14px;padding:14px 22px;font-size:14px}.studio-intro{gap:10px;font-size:12px;padding-left:14px}.studio-intro button{padding-inline:10px}.handwritten-ink{stroke-width:2px}.workshop-status{width:max-content;font-size:12px;}}
 @media(max-height:600px) and (min-width:601px){.studio-nameplate{top:14px;left:18px;padding:8px 14px}.studio-name{font-size:17px}.handwritten-heading{top:85px;width:470px}.studio-bottom-links,.studio-intro,.studio-writing-hint,.workshop-status{bottom:16px}}
-@media(prefers-color-scheme:dark){.workshop{--glass-bg:linear-gradient(130deg,#203e35b3,#27473b80);--glass-border:#d9ebd680;--glass-ink:#f5efdf;--glass-shadow:inset 0 1px 0 #ffffff33,0 5px 20px #203b3214;}.studio-bottom-links a:hover{background:#284e40d9}.studio-intro button:hover,.workshop-status button:hover{background:#ffffff30}.studio-intro button,.workshop-status button{background:#ffffff12}.studio-name{text-shadow:none}}
-@media(prefers-reduced-motion:reduce){.handwritten-heading,.writing-pencil{transition:none}.studio-bottom-links a,.studio-loading-mark{animation:none}.writing-pencil{display:none}}
+@media(prefers-color-scheme:dark){.workshop{--glass-bg:linear-gradient(130deg,#203e35b3,#27473b80);--glass-border:#d9ebd680;--glass-ink:#f5efdf;--glass-shadow:inset 0 1px 0 #ffffff33,0 5px 20px #203b3214;}.studio-bottom-links a:hover{background:var(--glass-bg)}.studio-intro button:hover,.workshop-status button:hover{background:#ffffff30}.studio-intro button,.workshop-status button{background:#ffffff12}.studio-name{text-shadow:none}}
+@media(prefers-reduced-motion:reduce){.handwritten-heading,.writing-brush{transition:none}.studio-bottom-links a,.studio-loading-mark{animation:none}.writing-brush{display:none}}
 
 .mobile-gesture-hint{display:none}@media(max-aspect-ratio:4/5){.desktop-gesture-hint{display:none}.mobile-gesture-hint{display:inline}}
 
@@ -41,3 +41,40 @@
 .studio-nameplate:hover .studio-portrait-glass::after{opacity:.65}.studio-nameplate:hover .studio-portrait{opacity:.95;filter:saturate(.85) contrast(.96)}
 @media(max-width:600px){.studio-portrait-glass{width:42px;height:42px}}
 @media(prefers-reduced-motion:reduce){.studio-portrait,.studio-portrait-glass,.studio-portrait-glass::after{transition:none}}
+@media(hover:hover) and (pointer:fine){
+ .studio-nameplate,.studio-bottom-links a{transform:perspective(700px) rotateX(0) rotateY(0);transform-origin:center;transition:transform .35s cubic-bezier(.2,.8,.2,1),box-shadow .35s;will-change:transform;}
+ .studio-nameplate:hover,.studio-bottom-links a:hover{transform:perspective(700px) rotateX(5deg) rotateY(-7deg) translateY(-2px);box-shadow:inset 0 1px 0 #ffffff80,5px 12px 28px #203b3228;}
+}
+@media(prefers-reduced-motion:reduce){.studio-nameplate,.studio-nameplate:hover,.studio-bottom-links a,.studio-bottom-links a:hover{transform:none;transition:none}}
+
+.portrait-sparkles{position:absolute;inset:-4px;pointer-events:none;}
+.portrait-sparkles i{position:absolute;width:8px;height:8px;background:var(--control-ink,#93216e);clip-path:polygon(50% 0,61% 39%,100% 50%,61% 61%,50% 100%,39% 61%,0 50%,39% 39%);filter:drop-shadow(0 0 2px #93216e33);animation:portrait-twinkle 3.6s ease-in-out infinite;}
+.portrait-sparkles i:nth-child(1){top:7px;right:0;}
+.portrait-sparkles i:nth-child(2){top:25px;left:0;width:5px;height:5px;animation-delay:-1.2s;}
+.portrait-sparkles i:nth-child(3){bottom:4px;right:7px;width:6px;height:6px;animation-delay:-2.4s;}
+@keyframes portrait-twinkle{0%,100%{opacity:.3;transform:scale(.7)}50%{opacity:.95;transform:scale(1.15)}}
+@media(prefers-reduced-motion:reduce){.portrait-sparkles i{animation:none;opacity:.7}}
+
+@font-face{font-family:Leckerli;src:url("/leckerli-one.ttf") format("truetype");font-display:swap;}
+.paint-lettering{font-family:Leckerli,cursive;font-size:46px;font-weight:400;opacity:.65;}
+
+
+.workshop{--glass-ink:#93216e;}
+.studio-role{color:inherit;}
+@media(prefers-color-scheme:dark){.workshop{--glass-ink:#f5a5da;}}
+
+.studio-name,.studio-role,.studio-bottom-links a{-webkit-text-stroke:0;text-shadow:none;}
+
+.studio-bottom-links a{color:#93216e;background:linear-gradient(130deg,rgba(255,250,246,.8),rgba(248,240,237,.65));}
+.studio-bottom-links a:hover{background:linear-gradient(130deg,rgba(255,250,246,.8),rgba(248,240,237,.65));}
+.studio-bottom-links a span{opacity:1;}
+
+.studio-nameplate,.studio-bottom-links a,.studio-bottom-links a:hover{background:linear-gradient(130deg,rgba(255,250,246,.45),rgba(248,240,237,.25));color:#93216e;border-color:transparent;box-shadow:0 5px 20px #203b3214;}
+@media(hover:hover) and (pointer:fine){.studio-nameplate:hover,.studio-bottom-links a:hover{box-shadow:5px 12px 28px #203b3228;}}
+
+/* Shared glass treatment for every prompt and control. */
+.workshop{--control-glass:linear-gradient(130deg,rgba(255,250,246,.45),rgba(248,240,237,.25));--control-ink:#93216e;}
+.studio-glass,.studio-bottom-links a,.studio-bottom-links a:hover{background:var(--control-glass);color:var(--control-ink);border-color:transparent;box-shadow:0 5px 20px #203b3214;}
+.studio-intro button,.workshop-status button{background:rgba(255,250,246,.2);color:var(--control-ink);border-color:transparent;}
+.studio-intro button:hover,.workshop-status button:hover{background:rgba(255,250,246,.35);}
+@media(hover:hover) and (pointer:fine){.studio-nameplate:hover,.studio-bottom-links a:hover{box-shadow:5px 12px 28px #203b3228;}}
