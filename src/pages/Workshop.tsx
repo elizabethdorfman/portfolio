@@ -2,16 +2,21 @@ import { useEffect, useRef, useState } from 'react';
 import * as T from 'three';
 
 import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
+import { STLLoader } from 'three/addons/loaders/STLLoader.js';
 import { RoomEnvironment } from 'three/addons/environments/RoomEnvironment.js';
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 import './workshop.css';
-import HandwrittenFinale from '../components/HandwrittenFinale';
+import HandwrittenFinale, { StudioNameplate } from '../components/HandwrittenFinale';
+import PromptDirector from '../components/PromptDirector';
 
 export default function Workshop() {
   const host = useRef<HTMLDivElement>(null);
+  const endingHost = useRef<HTMLDivElement>(null);
   const progress = useRef(0);
-  const [finale, setFinale] = useState(false);
-  const [storyBeat, setStoryBeat] = useState(0);
+  const [bustImage,setBustImage]=useState('');
+  const [, setFinale] = useState(false);
+  const [promptStage,setPromptStage]=useState(0);
+  const [promptAmount,setPromptAmount]=useState(0);
   const [introVisible, setIntroVisible] = useState(true);
   const [writingAmount, setWritingAmount] = useState(0);
   const [status, setStatus] = useState('Preparing the studio…');
@@ -19,7 +24,7 @@ export default function Workshop() {
     const el = host.current!;
     const scene = new T.Scene(); scene.background = new T.Color('#e7dbcc');
     scene.fog = new T.Fog('#e7dbcc', 28, 65);
-    const renderer = new T.WebGLRenderer({ antialias: true });
+    const renderer = new T.WebGLRenderer({ antialias: true, alpha: true });
     renderer.setPixelRatio(Math.min(devicePixelRatio, 1.5));
     renderer.shadowMap.enabled = true; renderer.shadowMap.type = T.PCFSoftShadowMap;
     renderer.toneMapping = T.ACESFilmicToneMapping; renderer.toneMappingExposure = .95;
@@ -31,29 +36,33 @@ export default function Workshop() {
     el.appendChild(renderer.domElement);
     const camera = new T.PerspectiveCamera(36, 1, .1, 70);
     const controls = new OrbitControls(camera, renderer.domElement);
+    let manualCamera=false;
+    const takeCamera=()=>{manualCamera=true;};
+    controls.addEventListener('start',takeCamera);
     controls.target.set(0, 2.8, 0); controls.enableDamping = true;
     controls.enablePan = false; controls.enableZoom = false;
-    controls.minAzimuthAngle = -.6; controls.maxAzimuthAngle = .6;
-    controls.minPolarAngle = 1.05; controls.maxPolarAngle = 1.6;
+    controls.minAzimuthAngle = -.3; controls.maxAzimuthAngle = .3;
+    controls.minPolarAngle = 1.36; controls.maxPolarAngle = 1.51;
+    let cameraRestRadius=1;
+    const cameraOffset=new T.Vector3();
     const mobileScenery: Array<{object:T.Object3D; x:number; z:number; kind:"server"|"flowers"|"bed"}> = [];
-    let cameraRestRadius = 1;
-    const cameraOffset = new T.Vector3();
     const resize = () => {
       const w=el.clientWidth,h=el.clientHeight;
       renderer.setSize(w,h);
       camera.aspect=w/h;
+      camera.setViewOffset(w,h,0,-h*.12,w,h);
       // Fit the full garden width on portrait screens, including the front flowers.
       const portrait = camera.aspect < .8;
       controls.enabled = !portrait;
-      controls.minAzimuthAngle = -.12;
-      controls.maxAzimuthAngle = .12;
+      controls.minAzimuthAngle = portrait ? -.08 : -.3;
+      controls.maxAzimuthAngle = portrait ? .08 : .3;
       const distance = portrait ? Math.max(28, 33 * .462 / camera.aspect) : 12.8;
       const fogOffset = Math.max(0, distance - 19);
       (scene.fog as T.Fog).near = 28 + fogOffset;
       (scene.fog as T.Fog).far = 65 + fogOffset;
       camera.far = Math.max(70, distance + 50);
       camera.position.set(portrait ? 0 : .8,portrait ? 4.8 : 4.4,distance);
-      cameraRestRadius = camera.position.distanceTo(controls.target);
+      cameraRestRadius=camera.position.distanceTo(controls.target);
       for (const item of mobileScenery) {
         item.object.position.x = portrait ? (item.kind === 'server' ? item.x - Math.sign(item.x)*1.8 : item.x*.67) : item.x;
         item.object.position.z = item.z - (portrait && item.kind !== 'server' ? 2 : 0);
@@ -250,35 +259,44 @@ export default function Workshop() {
       }});
     },undefined,()=>setStatus('Computer detail could not load. Reload to retry.'));
     const paintCoverage={value:0};
-    new T.TextureLoader().load('/elizabeth-bust-relief.png',texture=>{
-      if(disposed){texture.dispose();return;}
-      texture.colorSpace=T.SRGBColorSpace;
-      // Experimental portrait relief: displaced surface, not a full likeness scan.
-      const geometry=new T.PlaneGeometry(2.8*texture.image.width/texture.image.height,2.8,96,112);
-      const pos=geometry.attributes.position;
-      for(let i=0;i<pos.count;i++){
-        const x=pos.getX(i),y=pos.getY(i)+1.4;
-        const dome=.3*Math.exp(-x*x/0.7-Math.pow(y-1.75,2)/1.4);
-        const nose=.12*Math.exp(-x*x/.04-Math.pow(y-1.85,2)/.06);
-        pos.setXYZ(i,x,y,.1+dome+nose);
-      }
-      geometry.computeVertexNormals();
-      const material=new T.MeshStandardMaterial({map:texture,alphaTest:.45,side:T.DoubleSide,metalness:0,roughness:.8});
+    const loader=new STLLoader();
+    // Phones use a 12k-triangle version so the first visit stays usable on slow connections.
+    const sculptureAsset = window.matchMedia('(max-width: 600px)').matches
+      ? '/models/david-mobile.stl'
+      : '/models/david-optimized.stl';
+    loader.load(sculptureAsset,geometry=>{
+      if(disposed){geometry.dispose();return;}
+      geometry.rotateX(-Math.PI/2);geometry.computeBoundingBox();
+      const bounds=geometry.boundingBox!;const center=bounds.getCenter(new T.Vector3());
+      geometry.translate(-center.x,-bounds.min.y,-center.z);const scale=2.8/(bounds.max.y-bounds.min.y);geometry.scale(scale,scale,scale);
+      const pos=geometry.attributes.position;const uv=new Float32Array(pos.count*2);
+      for(let i=0;i<pos.count;i++){uv[i*2]=Math.atan2(pos.getZ(i),pos.getX(i))/(Math.PI*2)+.5;uv[i*2+1]=pos.getY(i)/2.8;}
+      geometry.setAttribute('uv',new T.BufferAttribute(uv,2));
+      const canvas=document.createElement('canvas');canvas.width=canvas.height=1024;const ctx=canvas.getContext('2d')!;
+      ctx.fillStyle='#174b3b';ctx.fillRect(0,0,1024,1024);ctx.strokeStyle='#b59851';ctx.lineWidth=2;
+      for(let i=0;i<650;i++){const x=Math.floor(rand()*128)*8,y=Math.floor(rand()*128)*8;ctx.beginPath();ctx.moveTo(x,y);ctx.lineTo(x+24,y);ctx.lineTo(x+40,y+16);ctx.lineTo(x+40,y+32+rand()*60);ctx.stroke();ctx.fillStyle='#ceb77a';ctx.fillRect(x-2,y-2,4,4);}
+      const texture=new T.CanvasTexture(canvas);texture.colorSpace=T.SRGBColorSpace;
+      const material=new T.MeshStandardMaterial({map:texture,metalness:.35,roughness:.48});
       material.onBeforeCompile=shader=>{
         shader.uniforms.assembly=assembly;shader.uniforms.paintCoverage=paintCoverage;
         shader.vertexShader='uniform float assembly; varying vec3 paintPosition;\n'+shader.vertexShader;
-        shader.fragmentShader='uniform float paintCoverage; varying vec3 paintPosition;\n'+shader.fragmentShader;
+        shader.fragmentShader='uniform float paintCoverage; varying vec3 paintPosition; float paintMask;\n'+shader.fragmentShader;
         shader.fragmentShader=shader.fragmentShader.replace('#include <map_fragment>',`
           #include <map_fragment>
           float height=paintPosition.y/2.8;
           float edge=1.08-paintCoverage*1.2;
           float ripple=sin(paintPosition.x*9.+sin(paintPosition.y*7.))*sin(paintPosition.z*8.+paintPosition.y*6.);
-          float coverage=smoothstep(edge-.055,edge+.055,height+.055*ripple);
+          float coverage=smoothstep(edge-.075,edge+.075,height+.055*ripple);
+          paintMask=coverage;
           float band=height*4.4+paintPosition.x*.7+sin(paintPosition.z*7.+paintPosition.y*5.)*.32+ripple*.35;
-          vec3 pigment=.52+.38*cos(6.28318*(band*.22+vec3(0.,.33,.67)));
+          vec3 warm=mix(vec3(1.,.25,.5),vec3(1.,.8,.22),.5+.5*sin(band*2.));
+          float greenWash=smoothstep(.52,1.,paintCoverage)*smoothstep(-.25,.55,sin(band*2.4));
+          vec3 pigment=mix(warm,vec3(.22,.72,.45),greenWash);
           float grain=.97+.03*sin(paintPosition.x*420.)*sin(paintPosition.y*390.);
-          diffuseColor.rgb*=mix(vec3(1.),pigment*grain,coverage*.75);
+          diffuseColor.rgb=mix(diffuseColor.rgb,pigment*grain,coverage);
         `);
+        shader.fragmentShader=shader.fragmentShader.replace('#include <roughnessmap_fragment>', '#include <roughnessmap_fragment>\n roughnessFactor=mix(roughnessFactor,.72,paintMask);');
+        shader.fragmentShader=shader.fragmentShader.replace('#include <metalnessmap_fragment>', '#include <metalnessmap_fragment>\n metalnessFactor=mix(metalnessFactor,.02,paintMask);');
         shader.vertexShader=shader.vertexShader.replace('#include <begin_vertex>', `
           paintPosition=position;
           vec3 board=vec3(position.x*.9,position.y*.64,position.z*.12-.3);
@@ -289,16 +307,36 @@ export default function Workshop() {
           vec3 objectNormal=normalize(mix(boardNormal,normal,smoothstep(0.,1.,assembly)));
         `);
       };
-      david=new T.Mesh(geometry,material);david.castShadow=true;david.receiveShadow=true;david.rotation.y=0;sculpture.add(david);setStatus('');
+      david=new T.Mesh(geometry,material);david.castShadow=true;david.receiveShadow=true;david.rotation.y=.65;sculpture.add(david);setStatus('');
     },undefined,()=>setStatus('Sculpture could not load. Reload to retry.'));
-    const wheel=(e:WheelEvent)=>{e.preventDefault();progress.current=T.MathUtils.clamp(progress.current+e.deltaY*.0008,0,1.6);};
-    el.addEventListener('wheel',wheel,{passive:false});
+    const syncScroll=()=>{
+      const screens=window.scrollY/window.innerHeight;
+      // Flat ranges give each finished generation a readable scroll pause.
+      const checkpoints=[[0,0],[1,.22],[1.5,.22],[1.6,.24],[4.4,.72],[4.9,.72],[5,.74],[6,1.08],[7.2,1.08],[7.3,1.10],[8.4,1.6]];
+      let value=1.6;
+      for(let i=1;i<checkpoints.length;i++){
+        const [end,to]=checkpoints[i], [start,from]=checkpoints[i-1];
+        if(screens<=end){value=T.MathUtils.lerp(from,to,T.MathUtils.clamp((screens-start)/(end-start),0,1));break;}
+      }
+      progress.current=value;
+      const entrance=T.MathUtils.clamp((screens-7.2)/.45,0,1);
+      const closing=endingHost.current?.parentElement;
+      if(closing){
+        closing.style.visibility=screens>7.2?'visible':'hidden';
+        closing.setAttribute('aria-hidden',String(screens<=7.2));
+      }
+      const reduce=window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+      endingHost.current?.parentElement?.style.setProperty('--entrance',String(reduce?1:T.MathUtils.smoothstep(entrance,0,.94)));
+      closing?.style.setProperty('--flower-entry',String(reduce?1:T.MathUtils.smoothstep(screens,7.95,8.38)));
+      closing?.style.setProperty('--prompt-entry',String(reduce?1:T.MathUtils.smoothstep(screens,7.2,7.55)));
+    };
+    window.addEventListener('scroll',syncScroll,{passive:true});syncScroll();
     // Pointer events cover both real touch and mouse drags in a phone preview.
     // Lock each portrait gesture to one action so orbit and timeline never compete.
     let gesture: {id:number; x:number; y:number; lastX:number; lastY:number; axis:'horizontal'|'vertical'|null} | null = null;
     const gestureSurface = renderer.domElement;
     const pointerDown = (e:PointerEvent) => {
-      if(camera.aspect >= .8 || !e.isPrimary || e.button !== 0) return;
+      if(e.pointerType==='touch'||camera.aspect >= .8 || !e.isPrimary || e.button !== 0) return;
       gesture={id:e.pointerId,x:e.clientX,y:e.clientY,lastX:e.clientX,lastY:e.clientY,axis:null};
       gestureSurface.setPointerCapture(e.pointerId);
     };
@@ -310,8 +348,9 @@ export default function Workshop() {
         gesture.axis=Math.abs(totalY)>=Math.abs(totalX)?'vertical':'horizontal';
       }
       if(gesture.axis==='vertical'){
-        progress.current=T.MathUtils.clamp(progress.current+(gesture.lastY-e.clientY)*.002,0,1.6);
+        window.scrollBy(0,gesture.lastY-e.clientY);
       }else{
+        manualCamera=true;
         const offset=camera.position.clone().sub(controls.target);
         const orbit=new T.Spherical().setFromVector3(offset);
         orbit.theta=T.MathUtils.clamp(orbit.theta-(e.clientX-gesture.lastX)/el.clientWidth*1.2,controls.minAzimuthAngle,controls.maxAzimuthAngle);
@@ -330,19 +369,27 @@ export default function Workshop() {
     gestureSurface.addEventListener('pointerup',pointerEnd);
     gestureSurface.addEventListener('pointercancel',pointerEnd);
     gestureSurface.addEventListener('lostpointercapture',pointerEnd);
-    const keyScroll=(e:KeyboardEvent)=>{if(e.target instanceof HTMLInputElement||e.target instanceof HTMLTextAreaElement)return;const step=['ArrowDown','PageDown',' '].includes(e.key)?.08:['ArrowUp','PageUp'].includes(e.key)?-.08:0;if(step){e.preventDefault();progress.current=T.MathUtils.clamp(progress.current+step,0,1.6);}};
+    const keyScroll=(e:KeyboardEvent)=>{if(e.target instanceof HTMLInputElement||e.target instanceof HTMLTextAreaElement)return;const step=['ArrowDown','PageDown',' '].includes(e.key)?.08:['ArrowUp','PageUp'].includes(e.key)?-.08:0;if(step){e.preventDefault();window.scrollBy(0,Math.sign(step)*window.innerHeight*.18);}};
     window.addEventListener('keydown',keyScroll);
     // The final scroll chapter paints the sculpture automatically.
 
     const reducedMotion=window.matchMedia("(prefers-reduced-motion: reduce)").matches;
-    const clock=new T.Clock();let frame=0;let current=0;let finaleVisible=false;let introIsVisible=true;let lastWriting=-1;let lastBeat=-1;
-    const orbitStart = new T.Vector3();
-    const orbitAxis = new T.Vector3(0, 1, 0);
-    function animate(){frame=requestAnimationFrame(animate);const time=clock.getElapsedTime();
-      current=T.MathUtils.lerp(current,progress.current,.065);
-      const stage=T.MathUtils.smoothstep(current,.1,.7);assembly.value=stage;
-      const charge=T.MathUtils.smoothstep(current,.015,.16);
-      const energy=charge*(1-T.MathUtils.smoothstep(current,.57,.73));
+    const clock=new T.Clock();let frame=0;let current=0;let finaleVisible=false;let introIsVisible=true;let lastWriting=-1;let lastPrompt=-1;
+    const orbitStart=new T.Vector3(),orbitAxis=new T.Vector3(0,1,0);
+    let bustCaptured=false;
+    let finishedAt:number|null=null;
+    function animate(){frame=requestAnimationFrame(animate);let time=clock.getElapsedTime();
+      current=T.MathUtils.lerp(current,Math.min(progress.current,1.08),.065);
+      if(current>=1.079){finishedAt??=time;time=finishedAt;}else finishedAt=null;
+      const scroll=progress.current;
+      const prompt=scroll<.24?0:scroll<.74?1:scroll<1.10?2:scroll<1.46?3:4;
+      const starts=[0,.24,.74,1.10,1.46],ends=[.10,.34,.84,1.20,1.6];
+      setPromptAmount(Math.min(1,Math.max(0,(scroll-starts[prompt])/(ends[prompt]-starts[prompt]))));
+      if(prompt!==lastPrompt){lastPrompt=prompt;setPromptStage(prompt);}
+      const action=scroll<.24?0:current;
+      const stage=T.MathUtils.smoothstep(action,.38,.70);assembly.value=stage;
+      const charge=T.MathUtils.smoothstep(action,.35,.40);
+      const energy=charge*(1-T.MathUtils.smoothstep(action,.66,.74));
       indicators.forEach((m,i)=>m.color.setRGB(.12+charge*.25,.25+charge*(.55+.12*Math.sin(time*3+i)),.17+charge*.2));
       const contact=new T.Vector3(.5,2.03+stage*2.45,.6);
       pulse.position.copy(contact);
@@ -375,12 +422,10 @@ export default function Workshop() {
       });
       bolts.instanceMatrix.needsUpdate=halos.instanceMatrix.needsUpdate=true;
       meltAmount.value=stage;
-      const dissolve=T.MathUtils.smoothstep(current,.35,.62);
+      const dissolve=T.MathUtils.smoothstep(action,.46,.70);
       hardwareMaterials.forEach(m=>{m.opacity=1-dissolve;m.roughness=.6-meltAmount.value*.38;});
-      devices.forEach(d=>{d.scale.setScalar(1);d.position.copy(d.userData.start);d.rotation.copy(d.userData.rotation);d.visible=current<.63;});
-      const painting=T.MathUtils.clamp((current-.74)/.25,0,1);
-      const beat=current<.18?0:current<.74?1:current<1.27?2:3;
-      if(beat!==lastBeat){lastBeat=beat;setStoryBeat(beat);}
+      devices.forEach(d=>{d.scale.setScalar(1);d.position.copy(d.userData.start);d.rotation.copy(d.userData.rotation);d.visible=action<.71;});
+      const painting=T.MathUtils.smoothstep(scroll,.84,1.08);
       paintCoverage.value=painting;
       paintArcs.forEach(({core,glow,start},i)=>{
         const strength=Math.sin(Math.PI*T.MathUtils.clamp((painting-i*.082)/.31,0,1));
@@ -402,9 +447,9 @@ export default function Workshop() {
       });
 
       if(david){
-        david.visible=current>.35;
-        david.scale.setScalar(1);const emergence=T.MathUtils.smoothstep(current,.35,.62);
-        const m=david.material as T.MeshStandardMaterial;m.transparent=true;m.opacity=emergence;m.metalness=0;m.roughness=.16+stage*.28+painting*.28;
+        david.visible=action>.46;
+        david.scale.setScalar(1);const emergence=T.MathUtils.smoothstep(action,.46,.70);
+        const m=david.material as T.MeshStandardMaterial;m.transparent=true;m.opacity=emergence;m.metalness=.35;m.roughness=.48;
       }
       const writing = current > 1.595 ? 1 : Math.max(0, (current - 1.28) / .32);
       if (Math.abs(writing-lastWriting) > .002 || (writing === 1 && lastWriting !== 1) || (writing === 0 && lastWriting !== 0)) { lastWriting=writing; setWritingAmount(writing); }
@@ -416,19 +461,75 @@ export default function Workshop() {
       flowers.forEach((f,i)=>f.rotation.z=reducedMotion?0:Math.sin(time*.65+i)*.012);
       const pushIn = T.MathUtils.smoothstep(current, .3, .74);
       const orbitProgress = T.MathUtils.smoothstep(current, .74, 1.26);
-      const pullBack = T.MathUtils.smoothstep(current, 1.26, 1.6);
-      const zoomAmount = reducedMotion ? 0 : pushIn * (1 - pullBack);
-      const radius = T.MathUtils.lerp(cameraRestRadius, Math.min(cameraRestRadius, 7.5), zoomAmount);
+      const zoomAmount = reducedMotion ? 0 : pushIn;
+      const radius = T.MathUtils.lerp(cameraRestRadius, Math.min(cameraRestRadius, camera.aspect<.8?cameraRestRadius*.53:7.6), zoomAmount);
+      if (!manualCamera) {
       if (current < .74) orbitStart.copy(camera.position).sub(controls.target).normalize();
       cameraOffset.copy(orbitStart).multiplyScalar(radius);
-      cameraOffset.applyAxisAngle(orbitAxis, reducedMotion ? 0 : Math.sin(orbitProgress*Math.PI*2)*.09);
+      cameraOffset.applyAxisAngle(orbitAxis, reducedMotion ? 0 : Math.sin(orbitProgress*Math.PI*2)*(camera.aspect<.8?.04:.12));
       controls.target.y = T.MathUtils.lerp(2.8, 3.3, zoomAmount);
       camera.position.copy(controls.target).add(cameraOffset);
-      controls.enabled = current < .74 && camera.aspect >= .8;
-      if (current >= .74) camera.lookAt(controls.target); else controls.update();
+      camera.lookAt(controls.target);
+      }
+      controls.enabled=camera.aspect>=.8;
+      if(manualCamera&&controls.enabled)controls.update();
+      // Apply the same safe envelope to scripted motion and manual dragging.
+      const safeOffset=camera.position.clone().sub(controls.target);
+      const safeOrbit=new T.Spherical().setFromVector3(safeOffset);
+      safeOrbit.theta=T.MathUtils.clamp(safeOrbit.theta,controls.minAzimuthAngle,controls.maxAzimuthAngle);
+      safeOrbit.phi=T.MathUtils.clamp(safeOrbit.phi,controls.minPolarAngle,controls.maxPolarAngle);
+      camera.position.copy(controls.target).add(safeOffset.setFromSpherical(safeOrbit));
+      camera.lookAt(controls.target);
+      sculpture.position.y=1.615;
+      if(!bustCaptured&&current>=1.079&&david){
+        const background=scene.background;
+        const hidden=scene.children.filter(o=>o!==sculpture&&!(o instanceof T.Light)&&o.visible);
+        hidden.forEach(o=>o.visible=false);
+        scene.background=null;renderer.setClearColor(0,0);
+        renderer.render(scene,camera);
+        const bounds=new T.Box3().setFromObject(sculpture);
+        const projected=[];
+        for(const x of [bounds.min.x,bounds.max.x])for(const y of [bounds.min.y,bounds.max.y])for(const z of [bounds.min.z,bounds.max.z])projected.push(new T.Vector3(x,y,z).project(camera));
+        const source=renderer.domElement,w=source.width,h=source.height;
+        const x=Math.max(0,Math.floor((Math.min(...projected.map(p=>p.x))+1)*w/2)-12);
+        const y=Math.max(0,Math.floor((1-Math.max(...projected.map(p=>p.y)))*h/2)-12);
+        const right=Math.min(w,Math.ceil((Math.max(...projected.map(p=>p.x))+1)*w/2)+12);
+        const bottom=Math.min(h,Math.ceil((1-Math.min(...projected.map(p=>p.y)))*h/2)+12);
+        const cutout=document.createElement('canvas');cutout.width=Math.max(1,right-x);cutout.height=Math.max(1,bottom-y);
+        cutout.getContext('2d')!.drawImage(source,x,y,cutout.width,cutout.height,0,0,cutout.width,cutout.height);
+        setBustImage(cutout.toDataURL('image/png'));bustCaptured=true;
+        scene.background=background;hidden.forEach(o=>o.visible=true);
+      }
       renderer.render(scene,camera);
     }animate();
-    return()=>{disposed=true;cancelAnimationFrame(frame);el.removeEventListener('wheel',wheel);gestureSurface.removeEventListener('pointerdown',pointerDown);gestureSurface.removeEventListener('pointermove',pointerMove);gestureSurface.removeEventListener('pointerup',pointerEnd);gestureSurface.removeEventListener('pointercancel',pointerEnd);gestureSurface.removeEventListener('lostpointercapture',pointerEnd);window.removeEventListener('keydown',keyScroll);window.removeEventListener('resize',resize);controls.dispose();scene.traverse(o=>{if(o instanceof T.Mesh){o.geometry.dispose();const mats=Array.isArray(o.material)?o.material:[o.material];mats.forEach(m=>{for(const key of ['map','normalMap','roughnessMap','bumpMap'] as const){if(key in m)(m as T.MeshStandardMaterial)[key]?.dispose();}m.dispose();});}});arcGeometry.forEach(g=>g.dispose());arcMaterial.dispose();envTarget.dispose();renderer.dispose();renderer.domElement.remove();};
+    return()=>{disposed=true;cancelAnimationFrame(frame);window.removeEventListener('scroll',syncScroll);gestureSurface.removeEventListener('pointerdown',pointerDown);gestureSurface.removeEventListener('pointermove',pointerMove);gestureSurface.removeEventListener('pointerup',pointerEnd);gestureSurface.removeEventListener('pointercancel',pointerEnd);gestureSurface.removeEventListener('lostpointercapture',pointerEnd);window.removeEventListener('keydown',keyScroll);window.removeEventListener('resize',resize);controls.removeEventListener('start',takeCamera);controls.dispose();scene.traverse(o=>{if(o instanceof T.Mesh){o.geometry.dispose();const mats=Array.isArray(o.material)?o.material:[o.material];mats.forEach(m=>{for(const key of ['map','normalMap','roughnessMap','bumpMap'] as const){if(key in m)(m as T.MeshStandardMaterial)[key]?.dispose();}m.dispose();});}});arcGeometry.forEach(g=>g.dispose());arcMaterial.dispose();envTarget.dispose();renderer.dispose();renderer.domElement.remove();};
   },[]);
-  return <main className="workshop"><div className={`story-caption ${storyBeat===3||status?'is-hidden':''}`} aria-live="polite">{['Powerful technology.','Shaped with intention.','Made to feel human.'][Math.min(storyBeat,2)]}</div><HandwrittenFinale key={String(finale)} active={finale} amount={writingAmount} loading={Boolean(status)} introVisible={introVisible} onSkip={() => { progress.current = 1.6; }} /><div ref={host} className="workshop-scene" aria-label="Interactive sculpture garden. Drag to look around; scroll to reveal Elizabeth’s portrait sculpture."/>{status&&<div className="workshop-status studio-glass" role="status"><span className="studio-loading-mark" aria-hidden="true">✧</span><span>{status}</span>{status.includes("could not") && <button onClick={() => window.location.reload()}>Retry ↗</button>}</div>}</main>;
+  return <main className="workshop prompt-flow scroll-page">
+    <StudioNameplate/>
+    <section className="gallery-scroll-track" aria-label="Creating the gallery">
+      <div className="gallery-sticky">
+        <PromptDirector stage={Math.min(promptStage,2)} amount={promptStage===0||promptStage>2?1:promptAmount}/>
+        <HandwrittenFinale active={false} amount={writingAmount} loading={Boolean(status)} introVisible={introVisible} onSkip={()=>window.scrollTo(0,window.innerHeight*8.4)}/>
+        <div ref={host} className="workshop-scene" aria-label="Interactive sculpture garden. Drag to look around; scroll to reveal David."/>
+        {status&&<div className="workshop-status studio-glass" role="status">{status}</div>}
+      </div>
+    </section>
+    <section className="closing-scroll-track" aria-label="Technology made simple">
+    <div className="pink-closing-section">
+      <PromptDirector stage={4} amount={Math.min(1,Math.max(0,(progress.current-1.10)/.49))}/>
+      <div ref={endingHost} className="closing-collage" aria-label="David and flowers on pink">
+
+        <div className="collage-flower-layer">
+          <img className="collage-flowers" src="/garden-flowers.png" alt="Colourful garden flowers"/>
+          <img className="collage-flowers collage-flowers-right" src="/garden-flowers.png" alt=""/>
+        </div>
+        {bustImage&&<img className="collage-david" src={bustImage} alt="David painted in watercolour"/>}
+      </div>
+      <nav className="studio-bottom-links" aria-label="Explore Elizabeth’s portfolio">
+        <a className="studio-glass" href="/Elizabeth_Dorfman_Resume_Aug2026.pdf" download>Résumé ↗</a>
+        <a className="studio-glass" href="mailto:elizabethdorfman31@gmail.com" >Contact ↗</a>
+      </nav>
+    </div>
+    </section>
+  </main>;
 }
