@@ -196,3 +196,9 @@
 .closing-collage .collage-flower-layer .collage-flowers{opacity:1;transform:none;}
 .closing-collage .collage-flower-layer .collage-flowers-right{transform:scaleX(-1);}
 @media(prefers-reduced-motion:reduce){.collage-flower-layer{transform:none;}}
+
+/* Stable viewport units keep mobile browser chrome from shifting the timeline. */
+.scroll-page .gallery-scroll-track{height:calc(var(--scene-height, 100svh)*8.2)}
+.scroll-page .closing-scroll-track{height:calc(var(--scene-height, 100svh)*1.2)}
+.scroll-page .gallery-sticky,.scroll-page .pink-closing-section{height:var(--scene-height, 100svh)}
+.scroll-page .workshop-scene canvas{touch-action:pan-y pinch-zoom}
