@@ -13,7 +13,10 @@ export default function Workshop() {
   const host = useRef<HTMLDivElement>(null);
   const endingHost = useRef<HTMLDivElement>(null);
   const progress = useRef(0);
+  const paintCursor = useRef<HTMLDivElement>(null);
   const finalBustHost = useRef<HTMLDivElement>(null);
+  const rotationSlider = useRef<HTMLInputElement>(null);
+  const bustControls = useRef({zoom:1,rotation:.65,manual:false});
   const [, setFinale] = useState(false);
   const [promptStage,setPromptStage]=useState(0);
   const [promptAmount,setPromptAmount]=useState(0);
@@ -174,9 +177,9 @@ export default function Workshop() {
     mesh(new T.SphereGeometry(.018,10,8),led,.78,1.28,.10,tower);
     devices.forEach(d=>{d.userData.start=d.position.clone();d.userData.rotation=d.rotation.clone();});
     // Oval artist's palette: thumb hole, irregular paint daubs and brush ridges.
-    const colors=['#22574a','#258ba0','#243d96','#74284c','#bc2541','#e35130','#f58a32','#eac44b','#efe7d4'];
+    const colors=['#39ff88','#00e5ff','#536dff','#d449ff','#ff2bbd','#ff5630','#ffab00','#efff37','#ffffff'];
     const ceramic=new T.MeshPhysicalMaterial({color:'#eee5d5',roughness:.35,clearcoat:.18});
-    const palette=new T.Group();palette.position.set(-1.0,1.64,.82);palette.rotation.y=-.12;scene.add(palette);
+    const palette=new T.Group();palette.position.set(camera.aspect<.8?-1.1:-1.8,1.64,-.8);palette.rotation.y=-.12;scene.add(palette);
     const outline=new T.Shape();outline.absellipse(0,0,1.12,.51,0,Math.PI*2,false,0);
     const hole=new T.Path();hole.absellipse(.48,.13,.13,.095,0,Math.PI*2,true,0);outline.holes.push(hole);
     const base=mesh(new T.ExtrudeGeometry(outline,{depth:.035,bevelEnabled:true,bevelThickness:.012,bevelSize:.015,bevelSegments:3,curveSegments:48}),ceramic,0,0,0,palette);base.rotation.x=-Math.PI/2;
@@ -186,6 +189,7 @@ export default function Workshop() {
       for(let dab=0;dab<5;dab++){
         const blob=mesh(new T.SphereGeometry(1,12,8),paint,x+Math.sin(dab*2.7+i)*.065,.052+dab*.002,z+Math.cos(dab*3.1+i)*.032,palette);
 
+        blob.userData.paintIndex=i;
         blob.scale.set(.1+dab*.006,.013+(dab%3)*.006,.06);blob.rotation.y=angle+dab*.3;
       }
       for(let ridge=0;ridge<5;ridge++){
@@ -290,6 +294,21 @@ export default function Workshop() {
       }});
     },undefined,()=>setStatus('Computer detail could not load. Reload to retry.'));
     const paintCoverage={value:0};
+    const paintedCanvas=document.createElement('canvas');paintedCanvas.width=paintedCanvas.height=512;
+    const paintedContext=paintedCanvas.getContext('2d')!;
+    const paintedTexture=new T.CanvasTexture(paintedCanvas);paintedTexture.colorSpace=T.SRGBColorSpace;
+    let paintingStroke=false,lastStamp=0;
+    const manualPaintVisible={value:0};
+    const selectedPaint=4;
+    const blankPaintTexture=new T.CanvasTexture(document.createElement('canvas'));
+    const paintRay=new T.Raycaster();
+    const stampPaint=(point:T.Vector3,index:number)=>{
+      const x=(Math.atan2(point.z,point.x)/(Math.PI*2)+.5)*512,y=(1-point.y/2.8)*512;
+      const gradient=paintedContext.createRadialGradient(x,y,3,x,y,22);
+      gradient.addColorStop(0,colors[index]);gradient.addColorStop(.65,colors[index]);gradient.addColorStop(1,colors[index]+'00');
+      paintedContext.fillStyle=gradient;paintedContext.fillRect(x-22,y-22,44,44);paintedTexture.needsUpdate=true;
+      lastStamp=performance.now();
+    };
     const loader=new STLLoader();
     // Phones use a 12k-triangle version so the first visit stays usable on slow connections.
     const sculptureAsset = touchDevice || window.matchMedia('(max-width: 900px)').matches
@@ -309,9 +328,11 @@ export default function Workshop() {
       const texture=new T.CanvasTexture(canvas);texture.colorSpace=T.SRGBColorSpace;
       const material=new T.MeshStandardMaterial({map:texture,metalness:.35,roughness:.48});
       material.onBeforeCompile=shader=>{
+        shader.uniforms.paintedMap={value:paintedTexture};
+        shader.uniforms.manualPaintVisible=manualPaintVisible;
         shader.uniforms.assembly=assembly;shader.uniforms.paintCoverage=paintCoverage;
         shader.vertexShader='uniform float assembly; varying vec3 paintPosition;\n'+shader.vertexShader;
-        shader.fragmentShader='uniform float paintCoverage; varying vec3 paintPosition; float paintMask;\n'+shader.fragmentShader;
+        shader.fragmentShader='uniform float manualPaintVisible; uniform sampler2D paintedMap; uniform float paintCoverage; varying vec3 paintPosition; float paintMask;\n'+shader.fragmentShader;
         shader.fragmentShader=shader.fragmentShader.replace('#include <map_fragment>',`
           #include <map_fragment>
           float height=paintPosition.y/2.8;
@@ -325,7 +346,11 @@ export default function Workshop() {
           vec3 pigment=mix(warm,vec3(.22,.72,.45),greenWash);
           float grain=.97+.03*sin(paintPosition.x*420.)*sin(paintPosition.y*390.);
           diffuseColor.rgb=mix(diffuseColor.rgb,pigment*grain,coverage);
+          vec4 brushed=texture2D(paintedMap,vMapUv); brushed.a*=manualPaintVisible;
+          diffuseColor.rgb=mix(diffuseColor.rgb,brushed.rgb,brushed.a);
+          paintMask=max(paintMask,brushed.a);
         `);
+        shader.fragmentShader=shader.fragmentShader.replace('#include <emissivemap_fragment>', '#include <emissivemap_fragment>\n vec4 neon=texture2D(paintedMap,vMapUv); totalEmissiveRadiance+=neon.rgb*neon.a*1.4*manualPaintVisible;');
         shader.fragmentShader=shader.fragmentShader.replace('#include <roughnessmap_fragment>', '#include <roughnessmap_fragment>\n roughnessFactor=mix(roughnessFactor,.72,paintMask);');
         shader.fragmentShader=shader.fragmentShader.replace('#include <metalnessmap_fragment>', '#include <metalnessmap_fragment>\n metalnessFactor=mix(metalnessFactor,.02,paintMask);');
         shader.vertexShader=shader.vertexShader.replace('#include <begin_vertex>', `
@@ -417,6 +442,30 @@ export default function Workshop() {
     let finalBust:T.Mesh|undefined;
     const finalCamera=new T.OrthographicCamera(-2,2,2,-2,.1,20);
     let finalWidth=0, finalHeight=0;
+    const paintHit=(e:PointerEvent)=>{
+      if(!david||current<1.079||progress.current>1.08)return;
+      const rect=renderer.domElement.getBoundingClientRect();
+      paintRay.setFromCamera(new T.Vector2((e.clientX-rect.left)/rect.width*2-1,1-(e.clientY-rect.top)/rect.height*2),camera);
+      return paintRay.intersectObject(david)[0];
+    };
+    const paintHover=(e:PointerEvent)=>{
+      const hit=paintHit(e),cursor=paintCursor.current;
+      if(cursor){cursor.hidden=!hit;cursor.style.left=`${e.clientX}px`;cursor.style.top=`${e.clientY}px`;}
+      renderer.domElement.style.cursor=hit?'none':'';
+      if(paintingStroke&&hit&&david&&performance.now()-lastStamp>35)stampPaint(david.worldToLocal(hit.point.clone()),selectedPaint);
+    };
+    const paintDown=(e:PointerEvent)=>{
+      if(!e.isPrimary||e.button!==0)return;
+      const hit=paintHit(e);if(!hit||!david)return;
+      paintingStroke=true;paintHover(e);stampPaint(david.worldToLocal(hit.point.clone()),selectedPaint);
+    };
+    const paintLeave=()=>{paintingStroke=false;paintCursor.current?.setAttribute('hidden','');renderer.domElement.style.cursor='';};
+    renderer.domElement.addEventListener('pointermove',paintHover);
+    renderer.domElement.addEventListener('pointerdown',paintDown);
+    renderer.domElement.addEventListener('pointerup',paintLeave);
+    renderer.domElement.addEventListener('pointerleave',paintLeave);
+    renderer.domElement.addEventListener('pointercancel',paintLeave);
+
     const renderFinalBust=(delta:number)=>{
       if(!finalRenderer||!finalScene||!finalBust||progress.current<=1.08||document.hidden)return;
       const mount=finalBustHost.current!;
@@ -433,6 +482,7 @@ export default function Workshop() {
     };
     let finishedAt:number|null=null;
     let lastRenderTime=-1, lastRenderedProgress=-1;
+    let lastZoom=1,lastRotation=.65;
     let lastTick=performance.now();
     let lastViewportWidth=viewportWidth, lastViewportHeight=viewportHeight;
     function animate(){frame=requestAnimationFrame(animate);let time=clock.getElapsedTime();
@@ -444,6 +494,8 @@ export default function Workshop() {
         ? target : T.MathUtils.damp(current,target,20,delta);
       if(Math.abs(target-current)<.0001) current=target;
       if(current>=1.079){finishedAt??=time;time=finishedAt;}else finishedAt=null;
+      manualPaintVisible.value=current>=1.079?1:0;
+      if(current<1.079||progress.current>1.08)paintLeave();
       const scroll=progress.current;
       const prompt=scroll<.24?0:scroll<.74?1:scroll<1.10?2:scroll<1.46?3:4;
       const starts=[0,.24,.74,1.10,1.46],ends=[.10,.34,.84,1.20,1.6];
@@ -453,14 +505,14 @@ export default function Workshop() {
       // Once offscreen, keep the DOM finale responsive without rendering the gallery.
       if (window.scrollY >= galleryTrack.offsetHeight && bustCaptured) return;
       const now=performance.now();
-      const changed=current!==lastRenderedProgress||viewportWidth!==lastViewportWidth||viewportHeight!==lastViewportHeight;
+      const changed=paintingStroke||performance.now()-lastStamp<150||bustControls.current.zoom!==lastZoom||bustControls.current.rotation!==lastRotation||current!==lastRenderedProgress||viewportWidth!==lastViewportWidth||viewportHeight!==lastViewportHeight;
       // Leave the finished frame on the canvas; CSS handles the section exit.
       if (!changed && current>=1.08 && bustCaptured && !manualCamera) return;
       // Use every available frame while interacting; throttle only idle scenery.
       const active=changed||manualCamera||(current>.35&&current<1.08);
       const interval=active?0:100;
       if(now-lastRenderTime<interval) return;
-      lastRenderTime=now;lastRenderedProgress=current;lastViewportWidth=viewportWidth;lastViewportHeight=viewportHeight;
+      lastRenderTime=now;lastRenderedProgress=current;lastZoom=bustControls.current.zoom;lastRotation=bustControls.current.rotation;lastViewportWidth=viewportWidth;lastViewportHeight=viewportHeight;
       const reveal=reducedMotion?1:T.MathUtils.smoothstep(current,.012,.20);
       studioContents.visible=reveal>0;
       studioContents.position.y=-(1-reveal)*.6;
@@ -531,7 +583,7 @@ export default function Workshop() {
 
       if(david){
         david.visible=action>.46;
-        david.scale.setScalar(1);const emergence=T.MathUtils.smoothstep(action,.46,.70);
+        david.scale.setScalar(bustControls.current.zoom);david.rotation.y=bustControls.current.rotation;const emergence=T.MathUtils.smoothstep(action,.46,.70);
         const m=david.material as T.MeshStandardMaterial;m.transparent=true;m.opacity=emergence;m.metalness=.35;m.roughness=.48;
       }
       const writing = current > 1.595 ? 1 : Math.max(0, (current - 1.28) / .32);
@@ -571,26 +623,42 @@ export default function Workshop() {
         finalRenderer.toneMapping=renderer.toneMapping;
         finalRenderer.toneMappingExposure=renderer.toneMappingExposure;
         finalBustHost.current!.appendChild(finalRenderer.domElement);
+        finalRenderer.domElement.style.touchAction='pan-y';
         finalScene=new T.Scene();finalScene.environment=envTarget.texture;finalScene.environmentIntensity=.32;
         finalScene.add(new T.HemisphereLight('#fff5df','#7e8b73',1.05));
         const key=new T.DirectionalLight('#ffecd0',3.2);key.position.set(-4,9,6);finalScene.add(key);
         const rim=new T.DirectionalLight('#cbdfe6',.7);rim.position.set(5,5,-2);finalScene.add(rim);
         // Reuse the already loaded model and painted material, with no room or shadows.
-        finalBust=new T.Mesh(david.geometry,david.material);finalBust.rotation.y=.65;finalScene.add(finalBust);
+        const originalMaterial=david.material as T.MeshStandardMaterial;
+        const finalMaterial=originalMaterial.clone();
+        finalMaterial.onBeforeCompile=(shader,webgl)=>{originalMaterial.onBeforeCompile(shader,webgl);shader.uniforms.paintedMap={value:blankPaintTexture};};
+        finalBust=new T.Mesh(david.geometry,finalMaterial);finalBust.rotation.y=.65;finalScene.add(finalBust);
         finalCamera.position.set(0,1.4,6);finalCamera.lookAt(0,1.4,0);
         bustCaptured=true;
       }
       renderer.render(scene,camera);
     }animate();
-    return()=>{starGeometry.dispose();starMaterial.dispose();starTexture.dispose();finalRenderer?.dispose();finalRenderer?.domElement.remove();scrollRoot.style.scrollBehavior=previousScrollBehavior;disposed=true;cancelAnimationFrame(frame);window.removeEventListener('scroll',syncScroll);gestureSurface.removeEventListener('pointerdown',pointerDown);gestureSurface.removeEventListener('pointermove',pointerMove);gestureSurface.removeEventListener('pointerup',pointerEnd);gestureSurface.removeEventListener('pointercancel',pointerEnd);gestureSurface.removeEventListener('lostpointercapture',pointerEnd);window.removeEventListener('keydown',keyScroll);window.removeEventListener('resize',resize);controls.removeEventListener('start',takeCamera);controls.dispose();scene.traverse(o=>{if(o instanceof T.Mesh){o.geometry.dispose();const mats=Array.isArray(o.material)?o.material:[o.material];mats.forEach(m=>{for(const key of ['map','normalMap','roughnessMap','bumpMap'] as const){if(key in m)(m as T.MeshStandardMaterial)[key]?.dispose();}m.dispose();});}});arcGeometry.forEach(g=>g.dispose());arcMaterial.dispose();envTarget.dispose();renderer.dispose();renderer.domElement.remove();};
+    return()=>{paintedTexture.dispose();blankPaintTexture.dispose();(finalBust?.material as T.Material|undefined)?.dispose();starGeometry.dispose();starMaterial.dispose();starTexture.dispose();finalRenderer?.dispose();finalRenderer?.domElement.remove();scrollRoot.style.scrollBehavior=previousScrollBehavior;disposed=true;cancelAnimationFrame(frame);window.removeEventListener('scroll',syncScroll);gestureSurface.removeEventListener('pointerdown',pointerDown);gestureSurface.removeEventListener('pointermove',pointerMove);gestureSurface.removeEventListener('pointerup',pointerEnd);gestureSurface.removeEventListener('pointercancel',pointerEnd);gestureSurface.removeEventListener('lostpointercapture',pointerEnd);window.removeEventListener('keydown',keyScroll);window.removeEventListener('resize',resize);controls.removeEventListener('start',takeCamera);controls.dispose();scene.traverse(o=>{if(o instanceof T.Mesh){o.geometry.dispose();const mats=Array.isArray(o.material)?o.material:[o.material];mats.forEach(m=>{for(const key of ['map','normalMap','roughnessMap','bumpMap'] as const){if(key in m)(m as T.MeshStandardMaterial)[key]?.dispose();}m.dispose();});}});arcGeometry.forEach(g=>g.dispose());arcMaterial.dispose();envTarget.dispose();renderer.dispose();renderer.domElement.remove();};
   },[]);
   return <main className="workshop prompt-flow scroll-page">
     <StudioNameplate/>
+    <div ref={paintCursor} className="paint-hand-cursor" hidden aria-hidden="true">
+      <svg viewBox="0 0 32 36" width="28" height="32"><path d="M9 19V8q0-4 3-4t3 4v9V4q0-3 3-3t3 3v13V7q0-3 3-3t3 3v13V13q0-3 3-3t3 3v11q0 9-10 10h-6q-5 0-8-5L2 21q-2-4 1-5t6 3Z" fill="var(--paint-color,#ff2bbd)" stroke="white" strokeWidth="2" strokeLinejoin="round"/></svg>
+      <span>Try painting</span>
+    </div>
     <section className="gallery-scroll-track" aria-label="Creating the gallery">
       <div className="gallery-sticky">
         <PromptDirector stage={Math.min(promptStage,2)} amount={promptStage===0||promptStage>2?1:promptAmount}/>
         <HandwrittenFinale active={false} amount={writingAmount} loading={Boolean(status)} introVisible={introVisible} onSkip={()=>window.scrollTo(0,window.innerHeight*7.2)}/>
-        <div ref={host} className="workshop-scene" aria-label="Interactive sculpture garden. Drag to look around; scroll to reveal David."/>
+      <div className="bust-controls" hidden={promptStage<2} role="group" aria-label="Explore David">
+        <label htmlFor="david-zoom">Zoom
+          <input id="david-zoom" type="range" min="60" max="180" defaultValue="100" step="1" onChange={e=>{bustControls.current.zoom=Number(e.target.value)/100;bustControls.current.manual=true;}}/>
+        </label>
+        <label htmlFor="david-rotate">Rotate
+          <input ref={rotationSlider} id="david-rotate" type="range" min="0" max="360" defaultValue="37" step="1" onChange={e=>{bustControls.current.rotation=Number(e.target.value)*Math.PI/180;bustControls.current.manual=true;}}/>
+        </label>
+      </div>
+        <div ref={host} className="workshop-scene" aria-label="Interactive sculpture garden. Scroll to reveal David. Use Zoom and Rotate to explore."/>
         {status&&<div className="workshop-status studio-glass" role="status">{status}</div>}
       </div>
     </section>
@@ -603,7 +671,7 @@ export default function Workshop() {
           <img className="collage-flowers" src="/garden-flowers.png" alt="Colourful garden flowers"/>
           <img className="collage-flowers collage-flowers-right" src="/garden-flowers.png" alt=""/>
         </div>
-        <div ref={finalBustHost} className="collage-david" role="img" aria-label="David painted in watercolour, slowly rotating"/>
+        <div ref={finalBustHost} className="collage-david" role="img" aria-label="Painted David sculpture."/>
       </div>
       <nav className="studio-bottom-links" aria-label="Explore Elizabeth’s portfolio">
         <a className="studio-glass" href="/Elizabeth_Dorfman_Resume_Aug2026.pdf" download>Résumé ↗</a>
