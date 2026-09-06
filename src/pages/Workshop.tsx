@@ -326,23 +326,23 @@ export default function Workshop() {
     const syncScroll=()=>{
       const screens=window.scrollY/viewportHeight;
       // Flat ranges give each finished generation a readable scroll pause.
-      const checkpoints=[[0,0],[1,.22],[1.5,.22],[1.6,.24],[4.4,.72],[4.9,.72],[5,.74],[6,1.08],[7.2,1.08],[7.3,1.10],[8.4,1.6]];
+      const checkpoints=[[0,0],[1,.22],[1.5,.22],[1.6,.24],[4.4,.72],[4.9,.72],[5,.74],[6,1.08],[6.1,1.10],[7.2,1.6]];
       let value=1.6;
       for(let i=1;i<checkpoints.length;i++){
         const [end,to]=checkpoints[i], [start,from]=checkpoints[i-1];
         if(screens<=end){value=T.MathUtils.lerp(from,to,T.MathUtils.clamp((screens-start)/(end-start),0,1));break;}
       }
       progress.current=value;
-      const entrance=T.MathUtils.clamp((screens-7.2)/.45,0,1);
+      const entrance=T.MathUtils.clamp((screens-6)/.45,0,1);
       const closing=endingHost.current?.parentElement;
       if(closing){
-        closing.style.visibility=screens>7.2?'visible':'hidden';
-        closing.setAttribute('aria-hidden',String(screens<=7.2));
+        closing.style.visibility=screens>6?'visible':'hidden';
+        closing.setAttribute('aria-hidden',String(screens<=6));
       }
       const reduce=window.matchMedia('(prefers-reduced-motion: reduce)').matches;
       endingHost.current?.parentElement?.style.setProperty('--entrance',String(reduce?1:T.MathUtils.smoothstep(entrance,0,.94)));
-      closing?.style.setProperty('--flower-entry',String(reduce?1:T.MathUtils.smoothstep(screens,7.95,8.38)));
-      closing?.style.setProperty('--prompt-entry',String(reduce?1:T.MathUtils.smoothstep(screens,7.2,7.55)));
+      closing?.style.setProperty('--flower-entry',String(reduce?1:T.MathUtils.smoothstep(screens,6.75,7.18)));
+      closing?.style.setProperty('--prompt-entry',String(reduce?1:T.MathUtils.smoothstep(screens,6,6.35)));
     };
     window.addEventListener('scroll',syncScroll,{passive:true});syncScroll();
     // Pointer events cover both real touch and mouse drags in a phone preview.
@@ -403,7 +403,7 @@ export default function Workshop() {
       setPromptAmount(Math.min(1,Math.max(0,scroll>=1.10?(scroll-1.10)/.49:(scroll-starts[prompt])/(ends[prompt]-starts[prompt]))));
       if(prompt!==lastPrompt){lastPrompt=prompt;setPromptStage(prompt);}
       // Once offscreen, keep the DOM finale responsive without rendering the gallery.
-      if (window.scrollY >= viewportHeight * 8.2 && bustCaptured) return;
+      if (window.scrollY >= viewportHeight * 7 && bustCaptured) return;
       const now=performance.now();
       const changed=current!==lastRenderedProgress||viewportWidth!==lastViewportWidth||viewportHeight!==lastViewportHeight;
       // Leave the finished frame on the canvas; CSS handles the section exit.
@@ -536,7 +536,7 @@ export default function Workshop() {
     <section className="gallery-scroll-track" aria-label="Creating the gallery">
       <div className="gallery-sticky">
         <PromptDirector stage={Math.min(promptStage,2)} amount={promptStage===0||promptStage>2?1:promptAmount}/>
-        <HandwrittenFinale active={false} amount={writingAmount} loading={Boolean(status)} introVisible={introVisible} onSkip={()=>window.scrollTo(0,window.innerHeight*8.4)}/>
+        <HandwrittenFinale active={false} amount={writingAmount} loading={Boolean(status)} introVisible={introVisible} onSkip={()=>window.scrollTo(0,window.innerHeight*7.2)}/>
         <div ref={host} className="workshop-scene" aria-label="Interactive sculpture garden. Drag to look around; scroll to reveal David."/>
         {status&&<div className="workshop-status studio-glass" role="status">{status}</div>}
       </div>

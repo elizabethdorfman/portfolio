@@ -161,8 +161,8 @@
 /* The gallery exits naturally before the next section pins for its entrances. */
 .gallery-scroll-track{height:740vh;}
 
-/* Hold the completed painting before the gallery leaves the viewport. */
-.gallery-scroll-track{height:820vh;}
+/* Exit the gallery as soon as the painting completes. */
+.gallery-scroll-track{height:700vh;}
 .pink-closing-section .studio-bottom-links{opacity:1;z-index:8;}
 .pink-closing-section{--beach-entry:0;--prompt-entry:0;}
 .prompt-flow .pink-closing-section .prompt-site-headline{opacity:var(--prompt-entry);transform:translate(-50%,calc((var(--prompt-entry) - 1)*140px));}
@@ -198,7 +198,7 @@
 @media(prefers-reduced-motion:reduce){.collage-flower-layer{transform:none;}}
 
 /* Stable viewport units keep mobile browser chrome from shifting the timeline. */
-.scroll-page .gallery-scroll-track{height:calc(var(--scene-height, 100svh)*8.2)}
+.scroll-page .gallery-scroll-track{height:calc(var(--scene-height, 100svh)*7)}
 .scroll-page .closing-scroll-track{height:calc(var(--scene-height, 100svh)*1.2)}
 .scroll-page .gallery-sticky,.scroll-page .pink-closing-section{height:var(--scene-height, 100svh)}
 .scroll-page .workshop-scene canvas{touch-action:pan-y pinch-zoom}
