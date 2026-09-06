@@ -78,6 +78,121 @@
 .studio-intro button,.workshop-status button{background:rgba(255,250,246,.2);color:var(--control-ink);border-color:transparent;}
 .studio-intro button:hover,.workshop-status button:hover{background:rgba(255,250,246,.35);}
 @media(hover:hover) and (pointer:fine){.studio-nameplate:hover,.studio-bottom-links a:hover{box-shadow:5px 12px 28px #203b3228;}}
-.story-caption{position:absolute;z-index:4;top:125px;left:50%;transform:translateX(-50%);font:400 clamp(22px,3vw,36px)/1.2 "Helvetica Neue",sans-serif;letter-spacing:-.035em;color:#563947;text-shadow:0 1px 10px #fff9;white-space:nowrap;pointer-events:none;transition:opacity .35s;}
-.story-caption.is-hidden{opacity:0;}
-@media(max-width:600px){.story-caption{top:115px;font-size:24px;}}
+.prompt-director{position:absolute;z-index:5;left:28px;top:120px;width:320px;padding:18px 20px;border:1px solid #fff8;border-radius:18px;background:linear-gradient(130deg,#fffaf2cc,#fff8ed88);backdrop-filter:blur(22px);-webkit-backdrop-filter:blur(22px);box-shadow:0 10px 32px #34352914;pointer-events:none;color:#403c3b;transition:opacity .4s,transform .4s;}
+.prompt-top{display:flex;justify-content:space-between;gap:12px;font:10px/1.4 ui-monospace,monospace;letter-spacing:.08em;color:#78646c;}
+.prompt-demo{font-size:8px;opacity:.8;align-self:center;}
+.prompt-director p{font:400 22px/1.4 "Helvetica Neue",sans-serif;letter-spacing:-.035em;min-height:62px;margin:15px 0 18px;}
+.prompt-caret{display:inline-block;width:2px;height:1em;background:#a94582;margin-left:3px;vertical-align:-.1em;animation:prompt-blink 1s steps(1) infinite;}
+.prompt-status{display:flex;gap:7px;align-items:center;font:10px/1.5 ui-monospace,monospace;color:#73686d;}
+.prompt-status>span:first-child{width:5px;height:5px;background:#8b9e77;border-radius:50%;}
+.prompt-pulse{animation:prompt-blink 1.4s ease-in-out infinite;}.prompt-step{margin-left:auto;}
+.prompt-finished{opacity:0;transform:translateY(-8px);}
+@keyframes prompt-blink{50%{opacity:.25;}}
+@media(max-width:700px){.prompt-director{top:112px;left:18px;right:18px;width:auto;padding:13px 16px;}.prompt-director p{font-size:19px;min-height:27px;margin:10px 0;}}
+@media(prefers-reduced-motion:reduce){.prompt-caret,.prompt-pulse{animation:none;}.prompt-director{transition:none;}}
+/* Single floating direction, with the scene doing the explaining. */
+.prompt-director{top:125px;left:50%;right:auto;transform:translateX(-50%);width:max-content;max-width:calc(100vw - 48px);padding:16px 26px;border-radius:24px;background:linear-gradient(145deg,#ffffffb8,#ffffff55);border:1px solid #ffffffa6;box-shadow:inset 0 1px 0 #fff9,0 12px 40px #172c3112;backdrop-filter:blur(28px) saturate(125%);-webkit-backdrop-filter:blur(28px) saturate(125%);animation:prompt-arrive .85s cubic-bezier(.16,1,.3,1) both;}
+.prompt-director p{font-family:-apple-system,BlinkMacSystemFont,"Helvetica Neue",sans-serif;font-size:clamp(21px,2.3vw,31px);font-weight:500;letter-spacing:-.045em;line-height:1.25;min-height:1.25em;margin:0;color:#303537;text-align:center;}
+.prompt-caret{background:#78848b;width:1.5px;}
+.prompt-director.prompt-finished{animation:none;opacity:0;transform:translate(-50%,-18px);}
+@keyframes prompt-arrive{from{opacity:0;transform:translate(-50%,45px) scale(.92);filter:blur(9px)}to{opacity:1;transform:translate(-50%,0) scale(1);filter:blur(0)}}
+@media(max-width:700px){.prompt-director{top:118px;padding:14px 20px;max-width:calc(100vw - 36px)}.prompt-director p{font-size:22px;}}
+@media(prefers-reduced-motion:reduce){.prompt-director{animation:none;}.prompt-director.prompt-finished{transform:translateX(-50%);}}
+.prompt-director{width:min(590px,calc(100vw - 48px));padding:8px 20px;overflow:visible;}
+.prompt-painted{display:block;width:100%;height:auto;overflow:visible;}
+.prompt-painted-letters{font-family:Leckerli,cursive;font-size:37px;opacity:.9;}
+.prompt-wash-reveal{transform-box:fill-box;transform-origin:left;animation:prompt-paint-reveal 1.8s .45s cubic-bezier(.3,.1,.35,1) both;}
+.prompt-paintbrush{animation:prompt-brush-travel 1.8s .45s cubic-bezier(.3,.1,.35,1) both;}
+@keyframes prompt-paint-reveal{from{transform:scaleX(0)}to{transform:scaleX(1)}}
+@keyframes prompt-brush-travel{0%{transform:translateX(0);opacity:0}5%{opacity:1}95%{opacity:1}100%{transform:translateX(640px);opacity:0}}
+@media(max-width:700px){.prompt-director{width:calc(100vw - 36px);padding:10px 12px;}.prompt-painted{min-height:55px;}}
+@media(prefers-reduced-motion:reduce){.prompt-wash-reveal{animation:none;}.prompt-paintbrush{display:none;}}
+.prompt-flow .handwritten-heading,.prompt-flow .studio-writing-hint{display:none;}
+.prompt-director .prompt-status{padding:0 8px 8px;color:#766872;font-size:11px;}
+.prompt-site-headline{position:absolute;z-index:5;top:130px;left:24px;right:24px;text-align:center;pointer-events:none;animation:headline-arrive 1s cubic-bezier(.16,1,.3,1) both;}
+.prompt-site-headline h1{margin:0;font:500 clamp(30px,4.1vw,58px)/1.08 -apple-system,BlinkMacSystemFont,"Helvetica Neue",sans-serif;letter-spacing:-.055em;color:#66364f;text-shadow:0 1px 16px #fff7;}
+@keyframes headline-arrive{from{opacity:0;transform:translateY(42px);filter:blur(7px)}to{opacity:1;transform:translateY(0);filter:blur(0)}}
+@media(max-width:700px){.prompt-site-headline{top:128px;left:18px;right:18px}.prompt-site-headline h1{font-size:clamp(28px,6vw,40px);}}
+@media(prefers-reduced-motion:reduce){.prompt-site-headline{animation:none;}}
+.prompt-site-headline{top:112px;left:50%;right:auto;transform:translateX(-50%);width:min(600px,calc(100vw - 48px));padding:22px 28px;border-radius:24px;border:1px solid #ffffffa6;background:linear-gradient(145deg,#ffffffb8,#ffffff55);backdrop-filter:blur(28px) saturate(125%);-webkit-backdrop-filter:blur(28px) saturate(125%);box-shadow:inset 0 1px 0 #fff9,0 12px 40px #172c3112;}
+.prompt-site-headline h1{font-size:clamp(27px,3vw,42px);line-height:1.13;letter-spacing:-.045em;}
+@keyframes headline-arrive{from{opacity:0;transform:translate(-50%,36px);filter:blur(7px)}to{opacity:1;transform:translate(-50%,0);filter:blur(0)}}
+@media(max-width:700px){.prompt-site-headline{top:112px;left:50%;right:auto;width:calc(100vw - 36px);padding:18px 20px;}.prompt-site-headline h1{font-size:clamp(25px,5.1vw,34px);}}
+.prompt-site-headline{width:min(680px,calc(100vw - 48px));padding:16px 22px;}
+.closing-painted{display:block;width:100%;height:auto;overflow:visible;}
+.closing-paint-letters{font:36px Leckerli,cursive;opacity:.92;}
+.closing-paint-reveal{transform-box:fill-box;transform-origin:left;animation:prompt-paint-reveal 1s cubic-bezier(.3,.1,.35,1) both;}
+@media(max-width:700px){.prompt-site-headline{padding:16px 12px;width:calc(100vw - 36px);}}
+@media(prefers-reduced-motion:reduce){.closing-paint-reveal{animation:none;}}
+
+.text-paintbrush{animation:letter-brush-travel cubic-bezier(.3,.1,.35,1) both;}
+@keyframes letter-brush-travel{0%{transform:translateX(0);opacity:0}1%{opacity:1}99%{opacity:1}100%{transform:translateX(var(--brush-travel));opacity:0}}
+@media(prefers-reduced-motion:reduce){.text-paintbrush{display:none;}}
+
+.prompt-flow .prompt-director,.prompt-flow .prompt-site-headline{animation:none;transition:none;}
+.prompt-site-headline .prompt-status{text-align:left;font-size:11px;color:#766872;}
+
+.prompt-flow .prompt-site-headline{top:112px;transform:translateX(-50%);}
+
+@media(min-width:701px){.prompt-flow .prompt-site-headline{top:100px;width:600px;padding:12px 20px;}}
+
+.workshop.scroll-page{position:relative;inset:auto;width:100%;background:#f2c8d7;}
+.gallery-scroll-track{position:relative;height:400vh;}
+.gallery-sticky{position:sticky;top:0;height:100vh;overflow:hidden;}
+.pink-closing-section{position:relative;height:100vh;min-height:600px;overflow:hidden;background:#f2c8d7;}
+.scroll-page .workshop-scene{touch-action:pan-y;}
+.scroll-page .studio-bottom-links a{animation:none;}
+
+
+/* One reversible progress value keeps every closing layer synchronized. */
+.gallery-scroll-track{height:740vh;}
+.closing-scroll-track{position:relative;height:300vh;}
+.pink-closing-section{position:sticky;top:0;height:100vh;min-height:0;background:#f2c8d7;--entrance:0;}
+.closing-collage{position:absolute;inset:0;pointer-events:none;}
+.closing-collage img{position:absolute;object-fit:contain;opacity:var(--entrance);will-change:transform;}
+.collage-david{left:34%;width:32%;bottom:15%;height:52%;z-index:2;filter:drop-shadow(0 20px 25px #894d6020);transform:translateY(calc((1 - var(--entrance))*65vh));}
+.collage-flowers{left:-5%;bottom:-5%;width:60%;height:32%;object-fit:cover!important;object-position:top;z-index:3;opacity:var(--flower-entry,var(--entrance,1));transform:translateY(calc((1 - var(--flower-entry,var(--entrance,1)))*110%));}
+.collage-flowers-right{left:auto;right:-5%;opacity:var(--flower-entry,var(--entrance,1));transform:translateY(calc((1 - var(--flower-entry,var(--entrance,1)))*110%)) scaleX(-1);}
+.prompt-flow .pink-closing-section .prompt-site-headline{opacity:var(--entrance);transform:translate(-50%,calc((var(--entrance) - 1)*140px));will-change:transform;}
+.pink-closing-section .studio-bottom-links{opacity:var(--entrance);}
+@media(max-width:700px){.collage-david{left:22%;width:56%;height:46%;bottom:18%;}.collage-flowers{width:65%;height:27%;bottom:-3%;}}
+@media(prefers-reduced-motion:reduce){.pink-closing-section{--entrance:1;}.closing-collage img,.collage-seascape{transform:none!important;opacity:1!important;}.collage-flowers-right{transform:scaleX(-1)!important;}}
+
+/* The gallery exits naturally before the next section pins for its entrances. */
+.gallery-scroll-track{height:740vh;}
+
+/* Hold the completed painting before the gallery leaves the viewport. */
+.gallery-scroll-track{height:820vh;}
+.pink-closing-section .studio-bottom-links{opacity:1;z-index:8;}
+.pink-closing-section{--beach-entry:0;--prompt-entry:0;}
+.prompt-flow .pink-closing-section .prompt-site-headline{opacity:var(--prompt-entry);transform:translate(-50%,calc((var(--prompt-entry) - 1)*140px));}
+
+.scroll-page>.studio-nameplate{position:fixed;z-index:30;}
+.pink-closing-section .studio-bottom-links a,.pink-closing-section .studio-bottom-links a:hover{background:var(--control-glass);color:var(--control-ink);border:1px solid transparent;border-radius:16px;box-shadow:0 5px 20px #203b3214;backdrop-filter:blur(18px) saturate(115%);-webkit-backdrop-filter:blur(18px) saturate(115%);font-weight:500;text-shadow:none;}
+
+/* Frame the bust with its two actions. */
+.pink-closing-section .studio-bottom-links{inset:0;transform:none;width:auto;max-width:none;display:block;pointer-events:none;}
+.pink-closing-section .studio-bottom-links a{position:absolute;top:59%;transform:translate(-50%,-50%);pointer-events:auto;white-space:nowrap;}
+.pink-closing-section .studio-bottom-links a:first-child{left:25%;}
+.pink-closing-section .studio-bottom-links a:last-child{left:75%;}
+.pink-closing-section .studio-bottom-links a:hover{transform:translate(-50%,-50%) translateY(-2px);}
+@media(max-width:700px){.pink-closing-section .studio-bottom-links a{top:61%;padding:11px 13px;font-size:12px;}.pink-closing-section .studio-bottom-links a:first-child{left:13%;}.pink-closing-section .studio-bottom-links a:last-child{left:87%;}}
+
+.prompt-director.prompt-opening{padding:20px 30px 16px;}
+.prompt-opening .prompt-painted{overflow:visible;}
+@media(max-width:700px){.prompt-director.prompt-opening{padding:18px 20px 14px;}}
+
+.prompt-shaping .prompt-painted-letters{font-size:30px;}
+.prompt-director.prompt-shaping{padding:16px 24px 12px;}
+
+.closing-scroll-track{height:120vh;}
+
+.prompt-flow .pink-closing-section .prompt-site-headline{top:150px;transform:translate(-50%,calc((var(--prompt-entry) - 1)*24px));}
+@media(min-width:701px){.pink-closing-section .collage-david{height:46%;bottom:12%;}}
+@media(max-width:700px){.prompt-flow .pink-closing-section .prompt-site-headline{top:145px;}}
+
+/* Move the complete flower bed as one layer from below the viewport. */
+.collage-flower-layer{position:absolute;inset:0;z-index:3;transform:translateY(calc((1 - var(--flower-entry,var(--entrance,1)))*35vh));will-change:transform;}
+.closing-collage .collage-flower-layer .collage-flowers{opacity:1;transform:none;}
+.closing-collage .collage-flower-layer .collage-flowers-right{transform:scaleX(-1);}
+@media(prefers-reduced-motion:reduce){.collage-flower-layer{transform:none;}}
