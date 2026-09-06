@@ -25,8 +25,9 @@ export default function Workshop() {
     const scene = new T.Scene(); scene.background = new T.Color('#e7dbcc');
     scene.fog = new T.Fog('#e7dbcc', 28, 65);
     const renderer = new T.WebGLRenderer({ antialias: true, alpha: true });
-    renderer.setPixelRatio(Math.min(devicePixelRatio, 1.5));
-    renderer.shadowMap.enabled = true; renderer.shadowMap.type = T.PCFSoftShadowMap;
+    const touchDevice = window.matchMedia('(pointer: coarse)').matches;
+    renderer.setPixelRatio(Math.min(devicePixelRatio, touchDevice ? .8 : 1));
+    renderer.shadowMap.enabled = !touchDevice; renderer.shadowMap.type = T.PCFSoftShadowMap;
     renderer.toneMapping = T.ACESFilmicToneMapping; renderer.toneMappingExposure = .95;
     const pmrem = new T.PMREMGenerator(renderer);
     const environment = new RoomEnvironment();
@@ -36,6 +37,14 @@ export default function Workshop() {
     el.appendChild(renderer.domElement);
     const camera = new T.PerspectiveCamera(36, 1, .1, 70);
     const controls = new OrbitControls(camera, renderer.domElement);
+    // OrbitControls sets touch-action:none even when disabled. Keep native swipes.
+    renderer.domElement.style.touchAction = 'pan-y pinch-zoom';
+    const scrollRoot = document.documentElement;
+    const previousScrollBehavior = scrollRoot.style.scrollBehavior;
+    scrollRoot.style.scrollBehavior = 'auto';
+    let viewportHeight = window.innerHeight;
+    let viewportWidth = window.innerWidth;
+    el.closest<HTMLElement>('.scroll-page')!.style.setProperty('--scene-height', `${viewportHeight}px`);
     let manualCamera=false;
     const takeCamera=()=>{manualCamera=true;};
     controls.addEventListener('start',takeCamera);
@@ -47,13 +56,18 @@ export default function Workshop() {
     const cameraOffset=new T.Vector3();
     const mobileScenery: Array<{object:T.Object3D; x:number; z:number; kind:"server"|"flowers"|"bed"}> = [];
     const resize = () => {
-      const w=el.clientWidth,h=el.clientHeight;
+      // Mobile browser chrome changes height mid-swipe; do not reset the camera.
+      if (touchDevice && camera.aspect !== 1 && window.innerWidth === viewportWidth) return;
+      viewportWidth = window.innerWidth;
+      viewportHeight = window.innerHeight;
+      el.closest<HTMLElement>('.scroll-page')!.style.setProperty('--scene-height', `${viewportHeight}px`);
+      const w=el.clientWidth,h=viewportHeight;
       renderer.setSize(w,h);
       camera.aspect=w/h;
       camera.setViewOffset(w,h,0,-h*.12,w,h);
       // Fit the full garden width on portrait screens, including the front flowers.
       const portrait = camera.aspect < .8;
-      controls.enabled = !portrait;
+      controls.enabled = !touchDevice && !portrait;
       controls.minAzimuthAngle = portrait ? -.08 : -.3;
       controls.maxAzimuthAngle = portrait ? .08 : .3;
       const distance = portrait ? Math.max(28, 33 * .462 / camera.aspect) : 12.8;
@@ -74,7 +88,7 @@ export default function Workshop() {
     resize(); window.addEventListener('resize',resize);
     scene.add(new T.HemisphereLight('#fff5df','#7e8b73',1.05));
     const sun = new T.DirectionalLight('#ffecd0',3.2); sun.position.set(-4,9,6); sun.castShadow=true;
-    sun.shadow.mapSize.set(2048,2048); Object.assign(sun.shadow.camera,{left:-9,right:9,top:10,bottom:-8}); sun.shadow.bias=-.0003;sun.shadow.radius=4; scene.add(sun);
+    sun.shadow.mapSize.set(1024,1024); Object.assign(sun.shadow.camera,{left:-9,right:9,top:10,bottom:-8}); sun.shadow.bias=-.0003;sun.shadow.radius=4; scene.add(sun);
     const fill=new T.DirectionalLight('#cbdfe6',.7);fill.position.set(5,5,-2);scene.add(fill);
     const mat=(color:string,metalness=0,roughness=.7)=>new T.MeshStandardMaterial({color,metalness,roughness});
     const stone=mat('#d9c8ae'), wood=mat('#dfd5c4'), brass=mat('#b8ad98',.45,.35), black=mat('#22292a');
@@ -147,7 +161,7 @@ export default function Workshop() {
     }
     for (const object of scene.children.slice(serverStart)) mobileScenery.push({object,x:object.position.x,z:object.position.z,kind:'server'});
     // Minimal white glass work surface; sculpture rests directly on the table.
-    const whiteGlass=new T.MeshPhysicalMaterial({color:'#f7faf9',roughness:.12,metalness:0,transmission:.28,thickness:.12,ior:1.48});
+    const whiteGlass=new T.MeshPhysicalMaterial({color:'#f7faf9',roughness:.12,metalness:0,transmission:0,thickness:.12,ior:1.48});
     box(6.6,.13,2.65,whiteGlass,0,1.55,.1);
     for(const x of [-2.8,2.8])box(.10,1.49,2.3,whiteGlass,x,.745,.1);
     const sculpture = new T.Group();sculpture.position.y=1.615;scene.add(sculpture);
@@ -196,7 +210,7 @@ export default function Workshop() {
       mobileScenery.push({object:bed,x:bed.position.x,z:bed.position.z,kind:'bed'});
       const foliage = new T.TextureLoader().load('/garden-flowers.png');
       foliage.colorSpace=T.SRGBColorSpace;
-      const flowerMaterial=new T.MeshStandardMaterial({map:foliage,transparent:true,alphaTest:.15,side:T.DoubleSide,roughness:1,depthWrite:true});
+      const flowerMaterial=new T.MeshStandardMaterial({map:foliage,transparent:true,alphaTest:.15,side:T.DoubleSide,forceSinglePass:true,roughness:1,depthWrite:true});
       flowerMaterial.onBeforeCompile = shader => {
         shader.uniforms.breezeTime = breezeTime;
         shader.vertexShader = 'uniform float breezeTime;\n' + shader.vertexShader;
@@ -261,7 +275,7 @@ export default function Workshop() {
     const paintCoverage={value:0};
     const loader=new STLLoader();
     // Phones use a 12k-triangle version so the first visit stays usable on slow connections.
-    const sculptureAsset = window.matchMedia('(max-width: 600px)').matches
+    const sculptureAsset = touchDevice || window.matchMedia('(max-width: 900px)').matches
       ? '/models/david-mobile.stl'
       : '/models/david-optimized.stl';
     loader.load(sculptureAsset,geometry=>{
@@ -310,7 +324,7 @@ export default function Workshop() {
       david=new T.Mesh(geometry,material);david.castShadow=true;david.receiveShadow=true;david.rotation.y=.65;sculpture.add(david);setStatus('');
     },undefined,()=>setStatus('Sculpture could not load. Reload to retry.'));
     const syncScroll=()=>{
-      const screens=window.scrollY/window.innerHeight;
+      const screens=window.scrollY/viewportHeight;
       // Flat ranges give each finished generation a readable scroll pause.
       const checkpoints=[[0,0],[1,.22],[1.5,.22],[1.6,.24],[4.4,.72],[4.9,.72],[5,.74],[6,1.08],[7.2,1.08],[7.3,1.10],[8.4,1.6]];
       let value=1.6;
@@ -378,14 +392,27 @@ export default function Workshop() {
     const orbitStart=new T.Vector3(),orbitAxis=new T.Vector3(0,1,0);
     let bustCaptured=false;
     let finishedAt:number|null=null;
+    let lastRenderTime=-1, lastRenderedProgress=-1;
+    let lastViewportWidth=viewportWidth, lastViewportHeight=viewportHeight;
     function animate(){frame=requestAnimationFrame(animate);let time=clock.getElapsedTime();
-      current=T.MathUtils.lerp(current,Math.min(progress.current,1.08),.065);
+      current=Math.min(progress.current,1.08);
       if(current>=1.079){finishedAt??=time;time=finishedAt;}else finishedAt=null;
       const scroll=progress.current;
       const prompt=scroll<.24?0:scroll<.74?1:scroll<1.10?2:scroll<1.46?3:4;
       const starts=[0,.24,.74,1.10,1.46],ends=[.10,.34,.84,1.20,1.6];
-      setPromptAmount(Math.min(1,Math.max(0,(scroll-starts[prompt])/(ends[prompt]-starts[prompt]))));
+      setPromptAmount(Math.min(1,Math.max(0,scroll>=1.10?(scroll-1.10)/.49:(scroll-starts[prompt])/(ends[prompt]-starts[prompt]))));
       if(prompt!==lastPrompt){lastPrompt=prompt;setPromptStage(prompt);}
+      // Once offscreen, keep the DOM finale responsive without rendering the gallery.
+      if (window.scrollY >= viewportHeight * 8.2 && bustCaptured) return;
+      const now=performance.now();
+      const changed=current!==lastRenderedProgress||viewportWidth!==lastViewportWidth||viewportHeight!==lastViewportHeight;
+      // Leave the finished frame on the canvas; CSS handles the section exit.
+      if (!changed && current>=1.08 && bustCaptured && !manualCamera) return;
+      // Idle breezes need few frames. Active scroll and electricity get 30 fps on phones.
+      const active=changed||manualCamera||(current>.35&&current<1.08);
+      const interval=active?(touchDevice?1000/30:1000/60):100;
+      if(now-lastRenderTime<interval) return;
+      lastRenderTime=now;lastRenderedProgress=current;lastViewportWidth=viewportWidth;lastViewportHeight=viewportHeight;
       const action=scroll<.24?0:current;
       const stage=T.MathUtils.smoothstep(action,.38,.70);assembly.value=stage;
       const charge=T.MathUtils.smoothstep(action,.35,.40);
@@ -396,7 +423,7 @@ export default function Workshop() {
       electric.visible=energy>.01&&!reducedMotion;
       pulse.intensity=energy*(5+Math.sin(time*8)*.6);
       arcMaterial.opacity=energy;haloMaterial.opacity=energy*.23;
-      arcGeometry.forEach((g,i)=>{
+      if(electric.visible) arcGeometry.forEach((g,i)=>{
         const arr=g.attributes.position as T.BufferAttribute;
         const angle=i/12*Math.PI*2;
         const start=i<8?new T.Vector3((i%2?-1:1)*(camera.aspect<.8?3.6:5.4),.8+(i%4)*.85,-4.8):new T.Vector3(Math.cos(angle)*.95,1.8+(i%3)*.6,.5);
@@ -412,7 +439,7 @@ export default function Workshop() {
         boltDummy.scale.set(radius,boltDirection.length(),radius);boltDummy.updateMatrix();bolts.setMatrixAt(segment,boltDummy.matrix);
         boltDummy.scale.set(radius*3.2,boltDirection.length(),radius*3.2);boltDummy.updateMatrix();halos.setMatrixAt(segment++,boltDummy.matrix);
       };
-      arcGeometry.forEach((g,i)=>{
+      if(electric.visible) arcGeometry.forEach((g,i)=>{
         const p=g.attributes.position as T.BufferAttribute;
         for(let k=0;k<14;k++){boltA.fromBufferAttribute(p,k);boltB.fromBufferAttribute(p,k+1);drawBolt(boltA,boltB,.018+(i%3)*.003);}
         // Short forks make the discharge read as lightning rather than wires.
@@ -471,7 +498,7 @@ export default function Workshop() {
       camera.position.copy(controls.target).add(cameraOffset);
       camera.lookAt(controls.target);
       }
-      controls.enabled=camera.aspect>=.8;
+      controls.enabled=!touchDevice&&camera.aspect>=.8;
       if(manualCamera&&controls.enabled)controls.update();
       // Apply the same safe envelope to scripted motion and manual dragging.
       const safeOffset=camera.position.clone().sub(controls.target);
@@ -502,7 +529,7 @@ export default function Workshop() {
       }
       renderer.render(scene,camera);
     }animate();
-    return()=>{disposed=true;cancelAnimationFrame(frame);window.removeEventListener('scroll',syncScroll);gestureSurface.removeEventListener('pointerdown',pointerDown);gestureSurface.removeEventListener('pointermove',pointerMove);gestureSurface.removeEventListener('pointerup',pointerEnd);gestureSurface.removeEventListener('pointercancel',pointerEnd);gestureSurface.removeEventListener('lostpointercapture',pointerEnd);window.removeEventListener('keydown',keyScroll);window.removeEventListener('resize',resize);controls.removeEventListener('start',takeCamera);controls.dispose();scene.traverse(o=>{if(o instanceof T.Mesh){o.geometry.dispose();const mats=Array.isArray(o.material)?o.material:[o.material];mats.forEach(m=>{for(const key of ['map','normalMap','roughnessMap','bumpMap'] as const){if(key in m)(m as T.MeshStandardMaterial)[key]?.dispose();}m.dispose();});}});arcGeometry.forEach(g=>g.dispose());arcMaterial.dispose();envTarget.dispose();renderer.dispose();renderer.domElement.remove();};
+    return()=>{scrollRoot.style.scrollBehavior=previousScrollBehavior;disposed=true;cancelAnimationFrame(frame);window.removeEventListener('scroll',syncScroll);gestureSurface.removeEventListener('pointerdown',pointerDown);gestureSurface.removeEventListener('pointermove',pointerMove);gestureSurface.removeEventListener('pointerup',pointerEnd);gestureSurface.removeEventListener('pointercancel',pointerEnd);gestureSurface.removeEventListener('lostpointercapture',pointerEnd);window.removeEventListener('keydown',keyScroll);window.removeEventListener('resize',resize);controls.removeEventListener('start',takeCamera);controls.dispose();scene.traverse(o=>{if(o instanceof T.Mesh){o.geometry.dispose();const mats=Array.isArray(o.material)?o.material:[o.material];mats.forEach(m=>{for(const key of ['map','normalMap','roughnessMap','bumpMap'] as const){if(key in m)(m as T.MeshStandardMaterial)[key]?.dispose();}m.dispose();});}});arcGeometry.forEach(g=>g.dispose());arcMaterial.dispose();envTarget.dispose();renderer.dispose();renderer.domElement.remove();};
   },[]);
   return <main className="workshop prompt-flow scroll-page">
     <StudioNameplate/>
@@ -516,7 +543,7 @@ export default function Workshop() {
     </section>
     <section className="closing-scroll-track" aria-label="Technology made simple">
     <div className="pink-closing-section">
-      <PromptDirector stage={4} amount={Math.min(1,Math.max(0,(progress.current-1.10)/.49))}/>
+      <PromptDirector stage={4} amount={progress.current>=1.10?promptAmount:0}/>
       <div ref={endingHost} className="closing-collage" aria-label="David and flowers on pink">
 
         <div className="collage-flower-layer">
