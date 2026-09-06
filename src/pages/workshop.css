@@ -162,7 +162,7 @@
 .gallery-scroll-track{height:740vh;}
 
 /* Exit the gallery as soon as the painting completes. */
-.gallery-scroll-track{height:700vh;}
+.gallery-scroll-track{height:600vh;}
 .pink-closing-section .studio-bottom-links{opacity:1;z-index:8;}
 .pink-closing-section{--beach-entry:0;--prompt-entry:0;}
 .prompt-flow .pink-closing-section .prompt-site-headline{opacity:var(--prompt-entry);transform:translate(-50%,calc((var(--prompt-entry) - 1)*140px));}
@@ -198,7 +198,14 @@
 @media(prefers-reduced-motion:reduce){.collage-flower-layer{transform:none;}}
 
 /* Stable viewport units keep mobile browser chrome from shifting the timeline. */
-.scroll-page .gallery-scroll-track{height:calc(var(--scene-height, 100svh)*7)}
+.scroll-page .gallery-scroll-track{height:calc(var(--scene-height, 100svh)*6)}
 .scroll-page .closing-scroll-track{height:calc(var(--scene-height, 100svh)*1.2)}
 .scroll-page .gallery-sticky,.scroll-page .pink-closing-section{height:var(--scene-height, 100svh)}
 .scroll-page .workshop-scene canvas{touch-action:pan-y pinch-zoom}
+
+.closing-collage .collage-david{position:absolute;opacity:var(--entrance);will-change:transform;}
+.collage-david canvas{display:block;width:100%;height:100%;}
+@media(prefers-reduced-motion:reduce){.closing-collage .collage-david{transform:none;opacity:1;}}
+
+.studio-scroll-hint{position:absolute;bottom:24px;left:50%;transform:translateX(-50%);z-index:10;color:#694153;font:500 12px/1.5 var(--mono);letter-spacing:.04em;pointer-events:none;white-space:nowrap;}
+.studio-scroll-hint span{margin-left:8px;}
