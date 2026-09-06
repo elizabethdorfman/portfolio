@@ -13,7 +13,7 @@ export default function Workshop() {
   const host = useRef<HTMLDivElement>(null);
   const endingHost = useRef<HTMLDivElement>(null);
   const progress = useRef(0);
-  const [bustImage,setBustImage]=useState('');
+  const finalBustHost = useRef<HTMLDivElement>(null);
   const [, setFinale] = useState(false);
   const [promptStage,setPromptStage]=useState(0);
   const [promptAmount,setPromptAmount]=useState(0);
@@ -232,6 +232,23 @@ export default function Workshop() {
       }
 
     }
+    // The first prompt assembles the studio contents; the room remains a backdrop.
+    const studioContents=new T.Group();
+    for(const object of scene.children.slice(serverStart)) studioContents.add(object);
+    scene.add(studioContents);studioContents.visible=false;
+    const starCanvas=document.createElement('canvas');starCanvas.width=starCanvas.height=32;
+    const starContext=starCanvas.getContext('2d')!;
+    starContext.fillStyle='white';starContext.beginPath();
+    for(let i=0;i<8;i++){const angle=i*Math.PI/4,r=i%2?3:15;
+      const x=16+Math.cos(angle)*r,y=16+Math.sin(angle)*r;
+      if(i===0)starContext.moveTo(x,y);else starContext.lineTo(x,y);
+    }starContext.closePath();starContext.fill();
+    const starTexture=new T.CanvasTexture(starCanvas);
+    const starPositions=new Float32Array(90*3);
+    for(let i=0;i<90;i++){starPositions[i*3]=(rand()-.5)*11;starPositions[i*3+1]=.6+rand()*4.4;starPositions[i*3+2]=-5+rand()*7;}
+    const starGeometry=new T.BufferGeometry();starGeometry.setAttribute('position',new T.BufferAttribute(starPositions,3));
+    const starMaterial=new T.PointsMaterial({map:starTexture,color:'#fff0bf',size:.18,transparent:true,depthWrite:false,blending:T.AdditiveBlending,toneMapped:false});
+    const sparkles=new T.Points(starGeometry,starMaterial);sparkles.visible=false;scene.add(sparkles);
     resize();
     let disposed=false;let david:T.Mesh|undefined;
     const assembly={value:0};
@@ -323,26 +340,30 @@ export default function Workshop() {
       };
       david=new T.Mesh(geometry,material);david.castShadow=true;david.receiveShadow=true;david.rotation.y=.65;sculpture.add(david);setStatus('');
     },undefined,()=>setStatus('Sculpture could not load. Reload to retry.'));
+    const galleryTrack=el.closest<HTMLElement>('.gallery-scroll-track')!;
     const syncScroll=()=>{
-      const screens=window.scrollY/viewportHeight;
-      // Flat ranges give each finished generation a readable scroll pause.
-      const checkpoints=[[0,0],[1,.22],[1.5,.22],[1.6,.24],[4.4,.72],[4.9,.72],[5,.74],[6,1.08],[6.1,1.10],[7.2,1.6]];
+      // Derive animation progress from the same element that controls sticky release.
+      // Painting must finish exactly where the gallery starts leaving the viewport.
+      const galleryTravel=Math.max(1,galleryTrack.offsetHeight-viewportHeight);
+      const screens=window.scrollY/galleryTravel*5;
+      // Continuous progression: each generation flows directly into the next text.
+      const checkpoints=[[0,0],[1,.24],[3.9,.74],[5,1.08],[5.1,1.10],[6.2,1.6]];
       let value=1.6;
       for(let i=1;i<checkpoints.length;i++){
         const [end,to]=checkpoints[i], [start,from]=checkpoints[i-1];
         if(screens<=end){value=T.MathUtils.lerp(from,to,T.MathUtils.clamp((screens-start)/(end-start),0,1));break;}
       }
       progress.current=value;
-      const entrance=T.MathUtils.clamp((screens-6)/.45,0,1);
+      const entrance=T.MathUtils.clamp((screens-5)/.45,0,1);
       const closing=endingHost.current?.parentElement;
       if(closing){
-        closing.style.visibility=screens>6?'visible':'hidden';
-        closing.setAttribute('aria-hidden',String(screens<=6));
+        closing.style.visibility=screens>5?'visible':'hidden';
+        closing.setAttribute('aria-hidden',String(screens<=5));
       }
       const reduce=window.matchMedia('(prefers-reduced-motion: reduce)').matches;
       endingHost.current?.parentElement?.style.setProperty('--entrance',String(reduce?1:T.MathUtils.smoothstep(entrance,0,.94)));
-      closing?.style.setProperty('--flower-entry',String(reduce?1:T.MathUtils.smoothstep(screens,6.75,7.18)));
-      closing?.style.setProperty('--prompt-entry',String(reduce?1:T.MathUtils.smoothstep(screens,6,6.35)));
+      closing?.style.setProperty('--flower-entry',String(reduce?1:T.MathUtils.smoothstep(screens,5.75,6.18)));
+      closing?.style.setProperty('--prompt-entry',String(reduce?1:T.MathUtils.smoothstep(screens,5,5.35)));
     };
     window.addEventListener('scroll',syncScroll,{passive:true});syncScroll();
     // Pointer events cover both real touch and mouse drags in a phone preview.
@@ -391,28 +412,63 @@ export default function Workshop() {
     const clock=new T.Clock();let frame=0;let current=0;let finaleVisible=false;let introIsVisible=true;let lastWriting=-1;let lastPrompt=-1;
     const orbitStart=new T.Vector3(),orbitAxis=new T.Vector3(0,1,0);
     let bustCaptured=false;
+    let finalRenderer:T.WebGLRenderer|undefined;
+    let finalScene:T.Scene|undefined;
+    let finalBust:T.Mesh|undefined;
+    const finalCamera=new T.OrthographicCamera(-2,2,2,-2,.1,20);
+    let finalWidth=0, finalHeight=0;
+    const renderFinalBust=(delta:number)=>{
+      if(!finalRenderer||!finalScene||!finalBust||progress.current<=1.08||document.hidden)return;
+      const mount=finalBustHost.current!;
+      const w=mount.clientWidth,h=mount.clientHeight;
+      if(!w||!h)return;
+      if(w!==finalWidth||h!==finalHeight){
+        finalWidth=w;finalHeight=h;finalRenderer.setSize(w,h);
+        const aspect=w/h,halfHeight=Math.max(1.62,1.35/aspect);
+        finalCamera.left=-halfHeight*aspect;finalCamera.right=halfHeight*aspect;
+        finalCamera.top=halfHeight;finalCamera.bottom=-halfHeight;finalCamera.updateProjectionMatrix();
+      }
+      if(!reducedMotion)finalBust.rotation.y+=delta*.35;
+      finalRenderer.render(finalScene,finalCamera);
+    };
     let finishedAt:number|null=null;
     let lastRenderTime=-1, lastRenderedProgress=-1;
+    let lastTick=performance.now();
     let lastViewportWidth=viewportWidth, lastViewportHeight=viewportHeight;
     function animate(){frame=requestAnimationFrame(animate);let time=clock.getElapsedTime();
-      current=Math.min(progress.current,1.08);
+      const tick=performance.now();
+      const delta=Math.min((tick-lastTick)/1000,.1);lastTick=tick;
+      const target=Math.min(progress.current,1.08);
+      // A short, frame-rate independent blend softens wheel steps without a long tail.
+      current=reducedMotion||target===0||target===1.08||Math.abs(target-current)>.25
+        ? target : T.MathUtils.damp(current,target,20,delta);
+      if(Math.abs(target-current)<.0001) current=target;
       if(current>=1.079){finishedAt??=time;time=finishedAt;}else finishedAt=null;
       const scroll=progress.current;
       const prompt=scroll<.24?0:scroll<.74?1:scroll<1.10?2:scroll<1.46?3:4;
       const starts=[0,.24,.74,1.10,1.46],ends=[.10,.34,.84,1.20,1.6];
       setPromptAmount(Math.min(1,Math.max(0,scroll>=1.10?(scroll-1.10)/.49:(scroll-starts[prompt])/(ends[prompt]-starts[prompt]))));
       if(prompt!==lastPrompt){lastPrompt=prompt;setPromptStage(prompt);}
+      renderFinalBust(delta);
       // Once offscreen, keep the DOM finale responsive without rendering the gallery.
-      if (window.scrollY >= viewportHeight * 7 && bustCaptured) return;
+      if (window.scrollY >= galleryTrack.offsetHeight && bustCaptured) return;
       const now=performance.now();
       const changed=current!==lastRenderedProgress||viewportWidth!==lastViewportWidth||viewportHeight!==lastViewportHeight;
       // Leave the finished frame on the canvas; CSS handles the section exit.
       if (!changed && current>=1.08 && bustCaptured && !manualCamera) return;
-      // Idle breezes need few frames. Active scroll and electricity get 30 fps on phones.
+      // Use every available frame while interacting; throttle only idle scenery.
       const active=changed||manualCamera||(current>.35&&current<1.08);
-      const interval=active?(touchDevice?1000/30:1000/60):100;
+      const interval=active?0:100;
       if(now-lastRenderTime<interval) return;
       lastRenderTime=now;lastRenderedProgress=current;lastViewportWidth=viewportWidth;lastViewportHeight=viewportHeight;
+      const reveal=reducedMotion?1:T.MathUtils.smoothstep(current,.012,.20);
+      studioContents.visible=reveal>0;
+      studioContents.position.y=-(1-reveal)*.6;
+      studioContents.scale.setScalar(.96+.04*reveal);
+      sparkles.visible=!reducedMotion&&reveal>0&&reveal<1;
+      starMaterial.opacity=Math.sin(reveal*Math.PI)*.9;
+      sparkles.position.y=reveal*.65;
+      sparkles.rotation.y=Math.sin(time)*.015;
       const action=scroll<.24?0:current;
       const stage=T.MathUtils.smoothstep(action,.38,.70);assembly.value=stage;
       const charge=T.MathUtils.smoothstep(action,.35,.40);
@@ -452,7 +508,7 @@ export default function Workshop() {
       const dissolve=T.MathUtils.smoothstep(action,.46,.70);
       hardwareMaterials.forEach(m=>{m.opacity=1-dissolve;m.roughness=.6-meltAmount.value*.38;});
       devices.forEach(d=>{d.scale.setScalar(1);d.position.copy(d.userData.start);d.rotation.copy(d.userData.rotation);d.visible=action<.71;});
-      const painting=T.MathUtils.smoothstep(scroll,.84,1.08);
+      const painting=T.MathUtils.smoothstep(current,.84,1.08);
       paintCoverage.value=painting;
       paintArcs.forEach(({core,glow,start},i)=>{
         const strength=Math.sin(Math.PI*T.MathUtils.clamp((painting-i*.082)/.31,0,1));
@@ -509,27 +565,24 @@ export default function Workshop() {
       camera.lookAt(controls.target);
       sculpture.position.y=1.615;
       if(!bustCaptured&&current>=1.079&&david){
-        const background=scene.background;
-        const hidden=scene.children.filter(o=>o!==sculpture&&!(o instanceof T.Light)&&o.visible);
-        hidden.forEach(o=>o.visible=false);
-        scene.background=null;renderer.setClearColor(0,0);
-        renderer.render(scene,camera);
-        const bounds=new T.Box3().setFromObject(sculpture);
-        const projected=[];
-        for(const x of [bounds.min.x,bounds.max.x])for(const y of [bounds.min.y,bounds.max.y])for(const z of [bounds.min.z,bounds.max.z])projected.push(new T.Vector3(x,y,z).project(camera));
-        const source=renderer.domElement,w=source.width,h=source.height;
-        const x=Math.max(0,Math.floor((Math.min(...projected.map(p=>p.x))+1)*w/2)-12);
-        const y=Math.max(0,Math.floor((1-Math.max(...projected.map(p=>p.y)))*h/2)-12);
-        const right=Math.min(w,Math.ceil((Math.max(...projected.map(p=>p.x))+1)*w/2)+12);
-        const bottom=Math.min(h,Math.ceil((1-Math.min(...projected.map(p=>p.y)))*h/2)+12);
-        const cutout=document.createElement('canvas');cutout.width=Math.max(1,right-x);cutout.height=Math.max(1,bottom-y);
-        cutout.getContext('2d')!.drawImage(source,x,y,cutout.width,cutout.height,0,0,cutout.width,cutout.height);
-        setBustImage(cutout.toDataURL('image/png'));bustCaptured=true;
-        scene.background=background;hidden.forEach(o=>o.visible=true);
+        finalRenderer=new T.WebGLRenderer({alpha:true,antialias:true});
+        finalRenderer.setPixelRatio(Math.min(devicePixelRatio,1));
+        finalRenderer.setClearColor(0,0);
+        finalRenderer.toneMapping=renderer.toneMapping;
+        finalRenderer.toneMappingExposure=renderer.toneMappingExposure;
+        finalBustHost.current!.appendChild(finalRenderer.domElement);
+        finalScene=new T.Scene();finalScene.environment=envTarget.texture;finalScene.environmentIntensity=.32;
+        finalScene.add(new T.HemisphereLight('#fff5df','#7e8b73',1.05));
+        const key=new T.DirectionalLight('#ffecd0',3.2);key.position.set(-4,9,6);finalScene.add(key);
+        const rim=new T.DirectionalLight('#cbdfe6',.7);rim.position.set(5,5,-2);finalScene.add(rim);
+        // Reuse the already loaded model and painted material, with no room or shadows.
+        finalBust=new T.Mesh(david.geometry,david.material);finalBust.rotation.y=.65;finalScene.add(finalBust);
+        finalCamera.position.set(0,1.4,6);finalCamera.lookAt(0,1.4,0);
+        bustCaptured=true;
       }
       renderer.render(scene,camera);
     }animate();
-    return()=>{scrollRoot.style.scrollBehavior=previousScrollBehavior;disposed=true;cancelAnimationFrame(frame);window.removeEventListener('scroll',syncScroll);gestureSurface.removeEventListener('pointerdown',pointerDown);gestureSurface.removeEventListener('pointermove',pointerMove);gestureSurface.removeEventListener('pointerup',pointerEnd);gestureSurface.removeEventListener('pointercancel',pointerEnd);gestureSurface.removeEventListener('lostpointercapture',pointerEnd);window.removeEventListener('keydown',keyScroll);window.removeEventListener('resize',resize);controls.removeEventListener('start',takeCamera);controls.dispose();scene.traverse(o=>{if(o instanceof T.Mesh){o.geometry.dispose();const mats=Array.isArray(o.material)?o.material:[o.material];mats.forEach(m=>{for(const key of ['map','normalMap','roughnessMap','bumpMap'] as const){if(key in m)(m as T.MeshStandardMaterial)[key]?.dispose();}m.dispose();});}});arcGeometry.forEach(g=>g.dispose());arcMaterial.dispose();envTarget.dispose();renderer.dispose();renderer.domElement.remove();};
+    return()=>{starGeometry.dispose();starMaterial.dispose();starTexture.dispose();finalRenderer?.dispose();finalRenderer?.domElement.remove();scrollRoot.style.scrollBehavior=previousScrollBehavior;disposed=true;cancelAnimationFrame(frame);window.removeEventListener('scroll',syncScroll);gestureSurface.removeEventListener('pointerdown',pointerDown);gestureSurface.removeEventListener('pointermove',pointerMove);gestureSurface.removeEventListener('pointerup',pointerEnd);gestureSurface.removeEventListener('pointercancel',pointerEnd);gestureSurface.removeEventListener('lostpointercapture',pointerEnd);window.removeEventListener('keydown',keyScroll);window.removeEventListener('resize',resize);controls.removeEventListener('start',takeCamera);controls.dispose();scene.traverse(o=>{if(o instanceof T.Mesh){o.geometry.dispose();const mats=Array.isArray(o.material)?o.material:[o.material];mats.forEach(m=>{for(const key of ['map','normalMap','roughnessMap','bumpMap'] as const){if(key in m)(m as T.MeshStandardMaterial)[key]?.dispose();}m.dispose();});}});arcGeometry.forEach(g=>g.dispose());arcMaterial.dispose();envTarget.dispose();renderer.dispose();renderer.domElement.remove();};
   },[]);
   return <main className="workshop prompt-flow scroll-page">
     <StudioNameplate/>
@@ -550,7 +603,7 @@ export default function Workshop() {
           <img className="collage-flowers" src="/garden-flowers.png" alt="Colourful garden flowers"/>
           <img className="collage-flowers collage-flowers-right" src="/garden-flowers.png" alt=""/>
         </div>
-        {bustImage&&<img className="collage-david" src={bustImage} alt="David painted in watercolour"/>}
+        <div ref={finalBustHost} className="collage-david" role="img" aria-label="David painted in watercolour, slowly rotating"/>
       </div>
       <nav className="studio-bottom-links" aria-label="Explore Elizabeth’s portfolio">
         <a className="studio-glass" href="/Elizabeth_Dorfman_Resume_Aug2026.pdf" download>Résumé ↗</a>

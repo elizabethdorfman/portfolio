@@ -2,7 +2,7 @@ import { useEffect, useRef } from 'react';
 
 const lines = ['Making powerful technology', 'feel simple.', ''];
 
-export default function HandwrittenFinale({ active, amount, loading, introVisible, onSkip }: { active: boolean; amount: number; loading: boolean; introVisible: boolean; onSkip: () => void }) {
+export default function HandwrittenFinale({ active, amount, loading, introVisible }: { active: boolean; amount: number; loading: boolean; introVisible: boolean; onSkip: () => void }) {
   const brush = useRef<SVGGElement>(null);
   const finished = active && amount >= 1;
   useEffect(() => {
@@ -64,7 +64,7 @@ export default function HandwrittenFinale({ active, amount, loading, introVisibl
         </g>
       </svg>
     </header>
-    {introVisible && !active && !loading && <div className="studio-intro studio-glass"><span><span className="desktop-gesture-hint">Scroll to transform</span><span className="mobile-gesture-hint">Swipe up to transform</span></span><button onClick={onSkip}>Skip intro ↗</button></div>}
+    {introVisible && !active && !loading && <div className="studio-scroll-hint">Scroll to explore <span aria-hidden="true">↓</span></div>}
     {active && !finished && <div className="studio-writing-hint studio-glass"><span className="desktop-gesture-hint">Keep scrolling to paint</span><span className="mobile-gesture-hint">Swipe up to paint</span> <span aria-hidden="true">↓</span></div>}
     {finished && <nav className="studio-bottom-links" aria-label="Explore Elizabeth’s portfolio">
       <a className="studio-glass" href="/Elizabeth_Dorfman_Resume_Aug2026.pdf" download="Elizabeth_Dorfman_Resume_Aug2026.pdf">Résumé <span>↗</span></a>
