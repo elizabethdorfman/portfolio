@@ -7,13 +7,7 @@ export const posts = [
     "summary": "I wanted my AI to explain itself clearly. Getting there involved a goldfish and a few very specific writing instructions.",
     "blocks": [
       {
-        "text": "As a programmer, I work with AI all day. In the past, I’ve asked my AI to do something, read its explanation, and still had no idea what it actually did or how that fulfilled my request."
-      },
-      {
-        "text": "Some days, talking to a robot all day makes me feel like hitting my head against the wall. I keep having to ask, “What do you mean?”"
-      },
-      {
-        "text": "I’m building systems to make working with my AI agents easier, beginning with how they write to me. I want a human assistant who can explain the work clearly enough for me to make a decision."
+        "text": "As a programmer, I work with AI all day. Sometimes I read a response twice and still think, ‘Okay, but what did you actually do?’ I’m building systems to make working with my AI agents easier, starting with how they write to me."
       },
       {
         "text": "My first attempt was to ask it to explain things like I was five. In a sample login explanation, it wrote, “Your app had a memory like a goldfish,” then described a browser throwing away a little note. Apparently, I was quite convincing about being five."

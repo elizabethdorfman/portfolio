@@ -229,4 +229,4 @@
 
 .closing-collage .collage-david{pointer-events:auto;}
 
-.studio-blog-link{position:fixed;top:24px;right:28px;z-index:20;padding:12px 20px;font:14px/1.5 ui-monospace,monospace;min-height:44px;display:flex;gap:20px;align-items:center}.studio-blog-link:hover{text-decoration:underline}@media(max-width:600px){.studio-blog-link{top:92px;right:18px;padding:10px 16px}}
+.studio-blog-link{position:fixed;top:24px;right:28px;z-index:20;padding:12px 20px;font:14px/1.5 ui-monospace,monospace;min-height:44px;display:flex;gap:20px;align-items:center}.studio-blog-link:hover{text-decoration:underline}@media(max-width:600px){.scroll-page>.studio-nameplate{right:88px;padding:9px 10px 10px 12px;gap:8px}.scroll-page .studio-portrait-glass{flex-shrink:0}.scroll-page .studio-portrait{width:32px;height:38px}.scroll-page .studio-name{font-size:14px}.scroll-page .studio-role{font-size:11px}.studio-blog-link{top:16px;right:18px;z-index:31;padding:0 12px;min-width:58px;min-height:63px;justify-content:center;font-size:13px}.studio-blog-link span{display:none}}
