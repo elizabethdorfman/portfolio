@@ -16,7 +16,7 @@ export default function Blog() {
     const previousTitle = document.title;
     const description = document.querySelector('meta[name="description"]');
     const previousDescription = description?.getAttribute('content');
-    document.title = `${slug ? post?.title ?? 'Post not found' : 'Blog'} · Elizabeth Dorfman`;
+    document.title = slug ? `${post?.title ?? 'Post not found'} · Elizabeth Dorfman Tech Blog` : 'Elizabeth Dorfman Tech Blog';
     description?.setAttribute('content', post?.summary ?? 'Writing about software, AI, and making technology easier to use.');
     window.scrollTo(0, 0);
     return () => {
