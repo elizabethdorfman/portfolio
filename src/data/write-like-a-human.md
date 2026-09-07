@@ -1,6 +1,6 @@
 ---
-name: talk-like-a-human
-description: Always apply. The house style for everything written to a person: plain, well-built English in real sentences, with insider shorthand cut and the whole story told in one message. This is the default voice for every explanation, update, report, summary, caption, and reply, not a mode to switch on. Load it at the start of any writing task, and reload it whenever writing gets feedback like "too technical", "I'm confused", "what does this even mean", "write it simply", "explain it in plain English", or "this sounds like a robot".
+name: write-like-a-human
+description: "Always apply. The house style for everything written to a person: plain, well-built English in real sentences, with insider shorthand cut and the whole story told in one message. This is the default voice for every explanation, update, report, summary, caption, and reply, not a mode to switch on. Load it at the start of any writing task, and reload it whenever writing gets feedback like \"too technical\", \"I'm confused\", \"what does this even mean\", \"write it simply\", \"explain it in plain English\", or \"this sounds like a robot\"."
 user-invocable: true
 ---
 

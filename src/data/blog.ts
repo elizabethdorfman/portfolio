@@ -1,6 +1,6 @@
 export const posts = [
   {
-    "slug": "talk-like-a-human",
+    "slug": "write-like-a-human",
     "title": "How I get my AI to write like a human",
     "date": "2026-09-07",
     "displayDate": "September 7, 2026",
