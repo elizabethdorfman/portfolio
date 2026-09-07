@@ -1,6 +1,19 @@
 {
+  "redirects": [
+    {
+      "source": "/blog/talk-like-a-human",
+      "destination": "/blog/write-like-a-human",
+      "permanent": true
+    }
+  ],
   "rewrites": [
-    { "source": "/blog", "destination": "/index.html" },
-    { "source": "/blog/:slug", "destination": "/index.html" }
+    {
+      "source": "/blog",
+      "destination": "/blog/index.html"
+    },
+    {
+      "source": "/blog/write-like-a-human",
+      "destination": "/blog/write-like-a-human/index.html"
+    }
   ]
 }

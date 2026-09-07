@@ -18,8 +18,24 @@ export default function Blog() {
     const previousDescription = description?.getAttribute('content');
     document.title = slug ? `${post?.title ?? 'Post not found'} · Elizabeth Dorfman Tech Blog` : 'Elizabeth Dorfman Tech Blog';
     description?.setAttribute('content', post?.summary ?? 'Writing about software, AI, and making technology easier to use.');
+    const saved: Array<() => void> = [];
+    const updateTag = (selector: string, attributes: Record<string, string>) => {
+      let tag = document.head.querySelector(selector);
+      const previous = tag?.outerHTML;
+      if (!tag) { tag = document.createElement(selector.startsWith('link') ? 'link' : 'meta'); document.head.append(tag); }
+      const element = tag;
+      Object.entries(attributes).forEach(([key, value]) => element.setAttribute(key, value));
+      saved.push(() => { if (previous) element.outerHTML = previous; else element.remove(); });
+    };
+    const url = `https://elizabethdorfman.com/blog${post ? `/${post.slug}` : ''}`;
+    updateTag('link[rel="canonical"]', { rel: 'canonical', href: url });
+    for (const [key, value] of Object.entries({ 'og:title': post?.title ?? 'Elizabeth Dorfman Tech Blog', 'og:description': post?.summary ?? 'Writing about software, AI, and making technology easier to use.', 'og:url': url, 'og:type': post ? 'article' : 'website', 'og:image': 'https://elizabethdorfman.com/write-like-a-human-preview.png', 'twitter:title': post?.title ?? 'Elizabeth Dorfman Tech Blog', 'twitter:description': post?.summary ?? 'Writing about software, AI, and making technology easier to use.', 'twitter:image': 'https://elizabethdorfman.com/write-like-a-human-preview.png' })) {
+      const attribute = key.startsWith('og:') ? 'property' : 'name';
+      updateTag(`meta[${attribute}="${key}"]`, { [attribute]: key, content: value });
+    }
     window.scrollTo(0, 0);
     return () => {
+      saved.reverse().forEach(restore => restore());
       document.title = previousTitle;
       if (previousDescription !== null && previousDescription !== undefined) description?.setAttribute('content', previousDescription);
     };
