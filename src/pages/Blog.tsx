@@ -5,6 +5,10 @@ import './blog.css';
 import writingSkill from '../data/talk-like-a-human.md?raw';
 import writingSkillUrl from '../data/talk-like-a-human.md?url';
 
+function LinkArrow() {
+  return <svg aria-hidden="true" width="1em" height="1em" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" style={{ display: 'inline-block', verticalAlign: '-0.1em' }}><path d="M5 19 19 5M5 5h14v14" /></svg>;
+}
+
 export default function Blog() {
   const { slug } = useParams();
   const post = posts.find(item => item.slug === slug);
@@ -32,7 +36,7 @@ export default function Blog() {
         <div className="blog-intro"><h1>Notes from<br /><em>my work.</em></h1><p>Thoughts on software, AI, and making technology easier to use.</p></div>
         <div className="blog-posts">{posts.map(item => <article key={item.slug} className="blog-card">
           <time dateTime={item.date}>{item.displayDate}</time>
-          <h2><Link to={`/blog/${item.slug}`}>{item.title}<span aria-hidden="true"> ↗</span></Link></h2>
+          <h2><Link to={`/blog/${item.slug}`}>{item.title}{' '}<LinkArrow /></Link></h2>
           <p>{item.summary}</p><Link className="blog-read" to={`/blog/${item.slug}`}>Read the post <span aria-hidden="true">→</span></Link>
         </article>)}</div>
       </> : post ? <article className="blog-article">
@@ -43,6 +47,6 @@ export default function Blog() {
         <Link className="blog-back blog-end" to="/blog">← Back to the blog</Link>
       </article> : <div className="blog-intro"><h1>This post<br />isn’t here.</h1><p>The address may be incorrect.</p><Link className="blog-back" to="/blog">Read the blog →</Link></div>}
     </main>
-    <footer className="blog-footer"><span>Elizabeth Dorfman</span><a href="mailto:elizabethdorfman31@gmail.com">Get in touch ↗</a></footer>
+    <footer className="blog-footer"><span>Elizabeth Dorfman</span><a href="mailto:elizabethdorfman31@gmail.com">Get in touch <LinkArrow /></a></footer>
   </div>;
 }

@@ -1,3 +1,4 @@
+import { Link } from 'react-router-dom';
 import { useEffect, useRef } from 'react';
 
 const lines = ['Making powerful technology', 'feel simple.', ''];
@@ -74,5 +75,5 @@ export default function HandwrittenFinale({ active, amount, loading, introVisibl
 }
 
 export function StudioNameplate(){
-  return <div className="studio-nameplate studio-glass"><span className="studio-portrait-glass"><img className="studio-portrait" src="/elizabeth-watercolor-180.png" alt="" width="48" height="48" /><span className="portrait-sparkles" aria-hidden="true"><i/><i/><i/></span></span><div className="studio-identity"><div className="studio-name">Elizabeth Dorfman</div><div className="studio-role"><span aria-hidden="true">›_</span> software engineer<span className="nameplate-cursor" aria-hidden="true" /></div></div></div>;
+  return <Link to="/" aria-label="Elizabeth Dorfman — home" className="studio-nameplate studio-glass"><span className="studio-portrait-glass"><img className="studio-portrait" src="/elizabeth-watercolor-180.png" alt="" width="48" height="48" /><span className="portrait-sparkles" aria-hidden="true"><i/><i/><i/></span></span><div className="studio-identity"><div className="studio-name">Elizabeth Dorfman</div><div className="studio-role"><span aria-hidden="true">›_</span> software engineer<span className="nameplate-cursor" aria-hidden="true" /></div></div></Link>;
 }
