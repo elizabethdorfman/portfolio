@@ -1,3 +1,4 @@
+import { Link } from 'react-router-dom';
 import { useEffect, useRef, useState } from 'react';
 import * as T from 'three';
 
@@ -642,6 +643,7 @@ export default function Workshop() {
   },[]);
   return <main className="workshop prompt-flow scroll-page">
     <StudioNameplate/>
+    <Link className="studio-blog-link studio-glass" to="/blog">Blog <span aria-hidden="true">↗</span></Link>
     <div ref={paintCursor} className="paint-hand-cursor" hidden aria-hidden="true">
       <svg viewBox="0 0 32 36" width="28" height="32"><path d="M9 19V8q0-4 3-4t3 4v9V4q0-3 3-3t3 3v13V7q0-3 3-3t3 3v13V13q0-3 3-3t3 3v11q0 9-10 10h-6q-5 0-8-5L2 21q-2-4 1-5t6 3Z" fill="var(--paint-color,#ff2bbd)" stroke="white" strokeWidth="2" strokeLinejoin="round"/></svg>
       <span>Try painting</span>

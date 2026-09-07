@@ -228,3 +228,5 @@
 .paint-hand-cursor span{white-space:nowrap;background:#fff5f8ee;border:1px solid white;border-radius:20px;padding:5px 10px;color:#782251;font:500 11px/1.4 var(--mono);}
 
 .closing-collage .collage-david{pointer-events:auto;}
+
+.studio-blog-link{position:fixed;top:24px;right:28px;z-index:20;padding:12px 20px;font:14px/1.5 ui-monospace,monospace;min-height:44px;display:flex;gap:20px;align-items:center}.studio-blog-link:hover{text-decoration:underline}@media(max-width:600px){.studio-blog-link{top:92px;right:18px;padding:10px 16px}}
