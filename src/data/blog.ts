@@ -1,6 +1,33 @@
-export const posts = [
+export type BlogPost = {
+  slug: string;
+  title: string;
+  date: string;
+  displayDate: string;
+  summary: string;
+  skill: 'write-like-a-human' | 'tune-my-skill';
+  image?: string;
+  imageAlt?: string;
+  markdown?: string;
+  blocks?: { text?: string; before?: string; after?: string }[];
+};
+
+import tuningArticle from './tune-my-skill-article.md?raw';
+
+export const posts: BlogPost[] = [
+  {
+    slug: 'tune-my-skill',
+    title: 'How to Write Better AI Skills',
+    date: '2026-09-19',
+    displayDate: 'September 19, 2026',
+    summary: 'I wrote “Fine Tune Your Skills” to help AI learn your taste and test whether it’s getting it right.',
+    skill: 'tune-my-skill',
+    image: '/fine-tune-my-skill.png',
+    imageAlt: 'A sketchbook illustration shows examples entering a testing machine with a pink heart and an improved SKILL.md emerging beside a note reading better AI.',
+    markdown: tuningArticle.replace(/^## .*\n+/, ''),
+  },
   {
     "slug": "write-like-a-human",
+    "skill": "write-like-a-human",
     "title": "How I get my AI to write like a human",
     "date": "2026-09-07",
     "displayDate": "September 7, 2026",

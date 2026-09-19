@@ -22,3 +22,16 @@
 @media(max-width:600px){.blog-header{width:calc(100% - 32px);padding:10px 14px;gap:12px;border-radius:20px;align-items:center}.blog-content{padding-top:58px}.blog-card{padding:24px 20px}.blog-card h2{font-size:26px}.blog-prompt{padding:20px}}
 
 .blog-intro>p:last-child,.blog-card>p,.blog-deck{font-family:Georgia,serif}
+
+.blog-prose ul,.blog-prose ol{font:18px/1.85 Georgia,serif;margin:0 0 24px;padding-left:26px}
+.blog-prose li{margin:6px 0}
+.blog-prose blockquote{margin:24px 0;padding:4px 24px;border-left:3px solid var(--accent);color:var(--ink)}
+.blog-prose blockquote p:last-child{margin-bottom:0}
+.blog-prose code{font:0.85em/1.7 ui-monospace,monospace;overflow-wrap:anywhere}
+.blog-prose pre{white-space:pre-wrap;overflow-wrap:anywhere;border:1px solid var(--line);border-radius:12px;background:var(--paper);padding:20px;margin:24px 0;font-size:14px}
+.blog-prose strong{font-weight:600}
+@media(max-width:600px){.blog-prose ul,.blog-prose ol{font-size:17px}.blog-prose pre{padding:16px}}
+
+.blog-article>header{padding-bottom:30px;border-bottom:1px solid var(--line);margin-bottom:36px}
+
+.blog-hero{margin:0 0 36px}.blog-hero img{display:block;width:100%;height:auto;border-radius:16px}

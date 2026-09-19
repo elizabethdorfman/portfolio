@@ -1,9 +1,17 @@
 import { useEffect } from 'react';
+import Markdown from 'react-markdown';
 import { Link, useParams } from 'react-router-dom';
 import { posts } from '../data/blog';
 import './blog.css';
 import writingSkill from '../data/write-like-a-human.md?raw';
 import writingSkillUrl from '../data/write-like-a-human.md?url';
+import tuningSkill from '../data/tune-my-skill.md?raw';
+import tuningSkillUrl from '../data/tune-my-skill.md?url';
+
+const skills = {
+  'write-like-a-human': { name: 'Write like a human', text: writingSkill, url: writingSkillUrl },
+  'tune-my-skill': { name: 'Fine Tune Your Skills', text: tuningSkill, url: tuningSkillUrl },
+};
 
 function LinkArrow() {
   return <svg aria-hidden="true" width="1em" height="1em" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" style={{ display: 'inline-block', verticalAlign: '-0.1em' }}><path d="M5 19 19 5M5 5h14v14" /></svg>;
@@ -12,6 +20,7 @@ function LinkArrow() {
 export default function Blog() {
   const { slug } = useParams();
   const post = posts.find(item => item.slug === slug);
+  const skill = post ? skills[post.skill] : undefined;
   useEffect(() => {
     const previousTitle = document.title;
     const description = document.querySelector('meta[name="description"]');
@@ -28,8 +37,9 @@ export default function Blog() {
       saved.push(() => { if (previous) element.outerHTML = previous; else element.remove(); });
     };
     const url = `https://elizabethdorfman.com/blog${post ? `/${post.slug}` : ''}`;
+    const image = `https://elizabethdorfman.com${post?.image ?? '/write-like-a-human-preview.png'}`;
     updateTag('link[rel="canonical"]', { rel: 'canonical', href: url });
-    for (const [key, value] of Object.entries({ 'og:title': post?.title ?? "Elizabeth's Software Engineering Blog", 'og:description': post?.summary ?? 'Writing about software and AI. Thoughts on designing simple, intuitive technology.', 'og:url': url, 'og:type': post ? 'article' : 'website', 'og:image': 'https://elizabethdorfman.com/write-like-a-human-preview.png', 'twitter:title': post?.title ?? "Elizabeth's Software Engineering Blog", 'twitter:description': post?.summary ?? 'Writing about software and AI. Thoughts on designing simple, intuitive technology.', 'twitter:image': 'https://elizabethdorfman.com/write-like-a-human-preview.png' })) {
+    for (const [key, value] of Object.entries({ 'og:title': post?.title ?? "Elizabeth's Software Engineering Blog", 'og:description': post?.summary ?? 'Writing about software and AI. Thoughts on designing simple, intuitive technology.', 'og:url': url, 'og:type': post ? 'article' : 'website', 'og:image': image, 'twitter:title': post?.title ?? "Elizabeth's Software Engineering Blog", 'twitter:description': post?.summary ?? 'Writing about software and AI. Thoughts on designing simple, intuitive technology.', 'twitter:image': image })) {
       const attribute = key.startsWith('og:') ? 'property' : 'name';
       updateTag(`meta[${attribute}="${key}"]`, { [attribute]: key, content: value });
     }
@@ -57,9 +67,10 @@ export default function Blog() {
         </article>)}</div>
       </> : post ? <article className="blog-article">
         <Link className="blog-back" to="/blog">← Back to the blog</Link>
-        <header><time dateTime={post.date}>{post.displayDate}</time><h1>{post.title}</h1><p className="blog-deck">{post.summary}</p><p className="blog-byline">Written by Elizabeth Dorfman (and her new writing skill)</p></header>
-        <div className="blog-prose">{post.blocks.map((block, i) => block.before ? <figure className="blog-comparison" key={i}><div className="blog-comparison-pair"><div><span className="blog-comparison-label">Before</span><blockquote>{block.before}</blockquote></div><div><span className="blog-comparison-label">After</span><blockquote>{block.after}</blockquote></div></div></figure> : <p key={i}>{block.text}</p>)}</div>
-        <section className="blog-skill" aria-label="The complete Write like a human skill"><div className="blog-skill-header"><h2>Make it yours.</h2><a href={writingSkillUrl} download="SKILL.md">Download SKILL.md ↓</a></div><pre className="blog-prompt"><code>{writingSkill}</code></pre></section>
+        <header><time dateTime={post.date}>{post.displayDate}</time><h1>{post.title}</h1><p className="blog-deck">{post.summary}</p></header>
+        {post.image && <figure className="blog-hero"><img src={post.image} alt={post.imageAlt ?? ''} width="1536" height="1024" /></figure>}
+        <div className="blog-prose">{post.markdown ? <Markdown>{post.markdown}</Markdown> : post.blocks?.map((block, i) => block.before ? <figure className="blog-comparison" key={i}><div className="blog-comparison-pair"><div><span className="blog-comparison-label">Before</span><blockquote>{block.before}</blockquote></div><div><span className="blog-comparison-label">After</span><blockquote>{block.after}</blockquote></div></div></figure> : <p key={i}>{block.text}</p>)}</div>
+        {skill && <section className="blog-skill" aria-label={`The complete ${skill.name} skill`}><div className="blog-skill-header"><h2>Make it yours.</h2><a href={skill.url} download="SKILL.md">Download SKILL.md ↓</a></div><pre className="blog-prompt"><code>{skill.text}</code></pre></section>}
         <Link className="blog-back blog-end" to="/blog">← Back to the blog</Link>
       </article> : <div className="blog-intro"><h1>This post<br />isn’t here.</h1><p>The address may be incorrect.</p><Link className="blog-back" to="/blog">Read the blog →</Link></div>}
     </main>
