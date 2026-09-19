@@ -8,7 +8,7 @@ try {
   const template = await readFile('dist/index.html', 'utf8');
   const assets = await readdir('dist/assets');
   const skill = assets.find(name => name.startsWith('write-like-a-human-') && name.endsWith('.md'));
-  const pages = [{ path: '/blog', title: 'Elizabeth\'s Software Engineering Blog', summary: 'Writing by Elizabeth Dorfman about software, AI, and making technology easier to use.' }, ...posts.map(post => ({ ...post, path: `/blog/${post.slug}` }))];
+  const pages = [{ path: '/blog', title: 'Elizabeth\'s Software Engineering Blog', summary: 'Writing by Elizabeth Dorfman about software, AI, and designing simple and intuitive technology.' }, ...posts.map(post => ({ ...post, path: `/blog/${post.slug}` }))];
   for (const page of pages) {
     const url = origin + page.path;
     const image = origin + '/write-like-a-human-preview.png';
