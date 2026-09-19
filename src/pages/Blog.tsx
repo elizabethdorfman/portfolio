@@ -16,7 +16,7 @@ export default function Blog() {
     const previousTitle = document.title;
     const description = document.querySelector('meta[name="description"]');
     const previousDescription = description?.getAttribute('content');
-    document.title = slug ? `${post?.title ?? 'Post not found'} · Elizabeth Dorfman Tech Blog` : 'Elizabeth Dorfman Tech Blog';
+    document.title = slug ? `${post?.title ?? 'Post not found'} · Elizabeth's Software Engineering Blog` : "Elizabeth's Software Engineering Blog";
     description?.setAttribute('content', post?.summary ?? 'Writing about software, AI, and making technology easier to use.');
     const saved: Array<() => void> = [];
     const updateTag = (selector: string, attributes: Record<string, string>) => {
@@ -29,7 +29,7 @@ export default function Blog() {
     };
     const url = `https://elizabethdorfman.com/blog${post ? `/${post.slug}` : ''}`;
     updateTag('link[rel="canonical"]', { rel: 'canonical', href: url });
-    for (const [key, value] of Object.entries({ 'og:title': post?.title ?? 'Elizabeth Dorfman Tech Blog', 'og:description': post?.summary ?? 'Writing about software, AI, and making technology easier to use.', 'og:url': url, 'og:type': post ? 'article' : 'website', 'og:image': 'https://elizabethdorfman.com/write-like-a-human-preview.png', 'twitter:title': post?.title ?? 'Elizabeth Dorfman Tech Blog', 'twitter:description': post?.summary ?? 'Writing about software, AI, and making technology easier to use.', 'twitter:image': 'https://elizabethdorfman.com/write-like-a-human-preview.png' })) {
+    for (const [key, value] of Object.entries({ 'og:title': post?.title ?? "Elizabeth's Software Engineering Blog", 'og:description': post?.summary ?? 'Writing about software, AI, and making technology easier to use.', 'og:url': url, 'og:type': post ? 'article' : 'website', 'og:image': 'https://elizabethdorfman.com/write-like-a-human-preview.png', 'twitter:title': post?.title ?? "Elizabeth's Software Engineering Blog", 'twitter:description': post?.summary ?? 'Writing about software, AI, and making technology easier to use.', 'twitter:image': 'https://elizabethdorfman.com/write-like-a-human-preview.png' })) {
       const attribute = key.startsWith('og:') ? 'property' : 'name';
       updateTag(`meta[${attribute}="${key}"]`, { [attribute]: key, content: value });
     }
@@ -49,7 +49,7 @@ export default function Blog() {
     </header>
     <main id="blog-content" className="blog-content">
       {!slug ? <>
-        <div className="blog-intro"><h1>Notes from<br /><em>my work.</em></h1><p>Thoughts on software, AI, and making technology easier to use.</p></div>
+        <div className="blog-intro"><h1>Notes from<br /><em>my work.</em></h1><p>Thoughts and learnings on software and AI.</p></div>
         <div className="blog-posts">{posts.map(item => <article key={item.slug} className="blog-card">
           <time dateTime={item.date}>{item.displayDate}</time>
           <h2><Link to={`/blog/${item.slug}`}>{item.title}{' '}<LinkArrow /></Link></h2>
